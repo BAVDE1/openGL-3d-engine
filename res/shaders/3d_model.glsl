@@ -94,11 +94,14 @@ struct SpotLight {
     float quadratic;
 };
 
+vec3 gammaSpace(vec3 linCol);
 vec3 calcPointLight(PointLight light, vec3 normal, vec3 diffuseTexture);
 vec3 calcDirectionLighting(vec3 normal, vec3 diffuseTexture);
 vec3 calcSpotLight(vec3 normal, vec3 diffuseTexture);
 vec3 calcLighting(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular);
 
+const float GAMMA = 1.5;
+const float EXPOSURE = .8;
 const int LIGHT_COUNT = 2;
 const float SHADOW_BIAS = .001;
 const float SHADOW_MAP_TEXEL_SIZE = 1.0 / (1000.0 * 2);
@@ -131,16 +134,22 @@ out vec4 colour;
 
 void main() {
     vec3 normal = normalize(v_normal);
-    vec3 diffuseTexture = texture(material.diffuseTexture, v_texCoords).xyz;
+    vec3 hdrCol = texture(material.diffuseTexture, v_texCoords).xyz;
+    vec3 mapped = vec3(1) - exp(-hdrCol * EXPOSURE);
+    vec3 gammaCol = gammaSpace(mapped);
 
     vec3 finalCol = vec3(0);
-    finalCol += calcDirectionLighting(normal, diffuseTexture);
+    finalCol += calcDirectionLighting(normal, gammaCol);
     for (int i = 0; i < LIGHT_COUNT; i++) {
-        finalCol += calcPointLight(lights[i], normal, diffuseTexture);
+        finalCol += calcPointLight(lights[i], normal, gammaCol);
     }
-    finalCol += calcSpotLight(normal, diffuseTexture) * flashLightStrength;
+    finalCol += calcSpotLight(normal, gammaCol) * flashLightStrength;
 
     colour = vec4(finalCol, 1);
+}
+
+vec3 gammaSpace(vec3 linCol) {
+    return pow(linCol, vec3(1 / GAMMA));
 }
 
 float calcAttenuation(vec3 lightPos, float c, float l, float q) {

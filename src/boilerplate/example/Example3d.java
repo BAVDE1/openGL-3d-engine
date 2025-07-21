@@ -94,7 +94,7 @@ public class Example3d extends GameBase {
         Renderer.enableStencilTest();
         Renderer.setStencilOperation(GL_KEEP, GL_KEEP, GL_REPLACE);
         Renderer.useDefaultFaceCulling();
-        Renderer.enableFramebufferGamma();
+//        Renderer.enableFramebufferGamma();
         Renderer.setViewportSize(SCREEN_SIZE.width, SCREEN_SIZE.height);
 
         bindEvents();
@@ -242,13 +242,13 @@ public class Example3d extends GameBase {
         model4.loadModel("res/models/miku/miku_prefab.fbx", true);
         model4.modelTransform.translate(-3, -1, 2.5f).rotateY(1.2f);
 
-        lightRed.setColourValues(new Vector3f(1, 0, 0), new Vector3f(.8f, 0, 0), new Vector3f());
-        lightBlue.setColourValues(new Vector3f(0, 0, 1), new Vector3f(0, 0, .8f), new Vector3f());
+        lightRed.setColourValues(new Vector3f(2, 0, 0), new Vector3f(.8f, 0, 0), new Vector3f());
+        lightBlue.setColourValues(new Vector3f(0, 0, 2), new Vector3f(0, 0, .8f), new Vector3f());
         lightGroup.addLight(lightRed, lightBlue);
 
-        skyLight.diffuse = new Vector3f(.8f);
+        skyLight.diffuse = new Vector3f(.4f);
         skyLight.specular = new Vector3f(.2f);
-        skyLight.ambient = new Vector3f(.1f);
+        skyLight.ambient = new Vector3f(.3f);
         skyLight.uniformValues("skyLight", modelShader);  // never changes
 
         spotLight.setColourValues(new Vector3f(1), new Vector3f(.6f), new Vector3f());
