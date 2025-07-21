@@ -98,13 +98,15 @@ vec3 gammaSpace(vec3 linCol);
 vec3 calcPointLight(PointLight light, vec3 normal, vec3 diffuseTexture);
 vec3 calcDirectionLighting(vec3 normal, vec3 diffuseTexture);
 vec3 calcSpotLight(vec3 normal, vec3 diffuseTexture);
+vec3 calcLightingShadow(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular);
 vec3 calcLighting(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular);
 
 const float GAMMA = 1.5;
 const float EXPOSURE = .8;
+
 const int LIGHT_COUNT = 2;
 const float SHADOW_BIAS = .001;
-const float SHADOW_MAP_TEXEL_SIZE = 1.0 / (1000.0 * 2);
+const float SHADOW_MAP_TEXEL_SIZE = 1.0 / (800.0 * 2);
 const vec2 SHADOW_MAP_OFFSETS[9] = vec2[](
     vec2(-SHADOW_MAP_TEXEL_SIZE,  SHADOW_MAP_TEXEL_SIZE), // top-left
     vec2( 0.0f,       SHADOW_MAP_TEXEL_SIZE), // top-center
@@ -130,7 +132,8 @@ in vec4 v_fragPosLightSpace;
 in vec3 v_normal;
 in vec2 v_texCoords;
 
-out vec4 colour;
+layout (location = 0) out vec4 colour;
+layout (location = 1) out vec4 brightColour;
 
 void main() {
     vec3 normal = normalize(v_normal);
@@ -146,6 +149,10 @@ void main() {
     finalCol += calcSpotLight(normal, gammaCol) * flashLightStrength;
 
     colour = vec4(finalCol, 1);
+
+    float brightness = dot(colour.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if (brightness > 0.9) brightColour = vec4(colour.rgb, 1.0);
+    else brightColour = vec4(0.0, 0.0, 0.0, 1.0);
 }
 
 vec3 gammaSpace(vec3 linCol) {
@@ -161,13 +168,13 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 diffuseTexture) {
     float attenuation = calcAttenuation(light.position, light.constant, light.linear, light.quadratic);
     vec3 viewDir = normalize(viewPos - v_fragPos);
     vec3 lightDir = normalize(light.position - v_fragPos);
-    return calcLighting(attenuation, viewDir, lightDir, normal, diffuseTexture, light.ambient, light.diffuse, light.specular);
+    return calcLightingShadow(attenuation, viewDir, lightDir, normal, diffuseTexture, light.ambient, light.diffuse, light.specular);
 }
 
 vec3 calcDirectionLighting(vec3 normal, vec3 diffuseTexture) {
     vec3 viewDir = normalize(viewPos - v_fragPos);
     vec3 lightDir = normalize(-skyLight.direction);
-    return calcLighting(1, viewDir, lightDir, normal, diffuseTexture, skyLight.ambient, skyLight.diffuse, skyLight.specular);
+    return calcLightingShadow(1, viewDir, lightDir, normal, diffuseTexture, skyLight.ambient, skyLight.diffuse, skyLight.specular);
 }
 
 vec3 calcSpotLight(vec3 normal, vec3 diffuseTexture) {
@@ -193,7 +200,7 @@ float calcShadow(vec3 normal, vec3 lightDir) {
     return shadow / 9;
 }
 
-vec3 calcLighting(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular) {
+vec3 calcLightingShadow(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular) {
     float diff = max(dot(lightDir, normal), 0);
 
     vec3 halfwayDir = normalize(lightDir + viewDir);
@@ -203,4 +210,16 @@ vec3 calcLighting(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, v
     vec3 diffuse = lightDiffuse * (diff * diffuseTexture);
     vec3 specular = lightSpecular * (spec * material.specular);
     return vec3(ambient * attenuation + (1 - calcShadow(normal, lightDir)) * (diffuse * attenuation + specular * attenuation));
+}
+
+vec3 calcLighting(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular) {
+    float diff = max(dot(lightDir, normal), 0);
+
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfwayDir), 0), material.shininess);
+
+    vec3 ambient = lightAmbient * diffuseTexture;
+    vec3 diffuse = lightDiffuse * (diff * diffuseTexture);
+    vec3 specular = lightSpecular * (spec * material.specular);
+    return vec3(ambient * attenuation + diffuse * attenuation + specular * attenuation);
 }

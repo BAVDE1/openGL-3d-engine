@@ -8,6 +8,7 @@ import org.lwjgl.opengl.GL45;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Frame Buffer is a section of the GPUs memory that holds buffers (colour buffer, depth buffer, stencil buffer).
@@ -73,10 +74,9 @@ public class FrameBuffer {
         }
     }
 
-    public static int defaultColourBuffFormat = GL45.GL_RGBA;
+    public static int defaultColourBuffStoredFormat = GL45.GL_RGBA16F;
+    public static int defaultColourBuffGivenFormat = GL45.GL_RGBA;
 
-    private static int boundReadFrameBuffer = 0;
-    private static int boundDrawFrameBuffer = 0;
     protected Integer bufferId;
 
     public Dimension size = new Dimension(128, 128);
@@ -105,6 +105,7 @@ public class FrameBuffer {
     public void setupIntermediaryFB() {
         intermediaryFB = new FrameBuffer(true, size);
         intermediaryFB.attachColourBuffer(intermediaryFB.setupDefaultColourBuffer());
+        intermediaryFB.attachColourBuffer(intermediaryFB.setupDefaultColourBuffer());
         intermediaryFB.checkCompletionOrError();
     }
 
@@ -129,7 +130,7 @@ public class FrameBuffer {
         bind();
         GL45.glFramebufferTexture2D(GL45.GL_FRAMEBUFFER, GL45.GL_COLOR_ATTACHMENT0 + colourBuffers.size(), multisample ? GL45.GL_TEXTURE_2D_MULTISAMPLE : GL45.GL_TEXTURE_2D, colourBuff.getId(), 0);
         colourBuffers.add(colourBuff);
-        Logging.debug("Attached colour buffer to frame buffer (fb id: %s), (texture id: %s, col buff index: %s)", getId(), colourBuff.getId(), colourBuffers.size());
+        Logging.debug("Attached colour buffer to frame buffer (fb id: %s), (texture id: %s, col buff index: %s)", getId(), colourBuff.getId(), colourBuffers.size()-1);
     }
 
     public void attachDepthBuffer(Texture depthBuff) {
@@ -165,9 +166,9 @@ public class FrameBuffer {
     }
 
     public static Texture setupDefaultColourBuffer(Dimension size) {
-        Texture t = setupTextureBuffer(size, defaultColourBuffFormat);
+        Texture t = setupTextureBuffer(size, defaultColourBuffStoredFormat, defaultColourBuffGivenFormat, GL45.GL_UNSIGNED_BYTE);
         t.useNearestInterpolation();
-        t.useRepeatWrap();
+        t.useClampEdgeWrap();
         return t;
     }
 
@@ -218,6 +219,11 @@ public class FrameBuffer {
         return rb;
     }
 
+    public void drawToMultipleColourBuffers(int... attachmentIndex) {
+        for (int i = 0; i < attachmentIndex.length; i++) attachmentIndex[i] = GL45.GL_COLOR_ATTACHMENT0 + attachmentIndex[i];
+        GL45.glDrawBuffers(attachmentIndex);
+    }
+
     public void genId() {
         if (bufferId != null) {
             Logging.warn("Attempting to re-generate already generated frame buffer id, aborting");
@@ -239,49 +245,34 @@ public class FrameBuffer {
     }
 
     public void bind() {
-//        if (boundReadFrameBuffer == bufferId && boundDrawFrameBuffer == bufferId) return;
-        boundReadFrameBuffer = bufferId;
-        boundDrawFrameBuffer = bufferId;
         GL45.glBindFramebuffer(GL45.GL_FRAMEBUFFER, bufferId);
     }
 
     public void bindToRead() {
-        if (boundReadFrameBuffer == bufferId) return;
-        boundReadFrameBuffer = bufferId;
         GL45.glBindFramebuffer(GL45.GL_READ_FRAMEBUFFER, bufferId);
     }
 
     public void bindToDraw() {
-        if (boundDrawFrameBuffer == bufferId) return;
-        boundDrawFrameBuffer = bufferId;
         GL45.glBindFramebuffer(GL45.GL_DRAW_FRAMEBUFFER, bufferId);
-    }
-
-    public void bindIntermediaryFBColorBuffer() {
-        intermediaryFB.colourBuffers.getFirst().bind();
     }
 
     /**
      * 0 reverts to use the default frame buffer, set by the windowing system (GLFW)
      */
     public static void unbind() {
-        boundReadFrameBuffer = 0;
-        boundDrawFrameBuffer = 0;
         GL45.glBindFramebuffer(GL45.GL_FRAMEBUFFER, 0);
     }
 
     public static void unbindFromRead() {
-        boundReadFrameBuffer = 0;
         GL45.glBindFramebuffer(GL45.GL_READ_FRAMEBUFFER, 0);
     }
 
     public static void unbindFromDraw() {
-        boundDrawFrameBuffer = 0;
         GL45.glBindFramebuffer(GL45.GL_DRAW_FRAMEBUFFER, 0);
     }
 
     public void delete() {
-        if (boundReadFrameBuffer == bufferId) unbind();
+        unbind();
         GL45.glDeleteFramebuffers(bufferId);
     }
 

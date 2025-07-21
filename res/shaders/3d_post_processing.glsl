@@ -7,23 +7,21 @@ out vec2 v_texPos;
 
 void main() {
     gl_Position = vec4(pos.x, pos.y, 0, 1);
-    v_texPos = (pos - 1) * .5;
+    v_texPos = (pos * .5) + .5;
 }
 
 //--- FRAG
 #version 450 core
 
-const float GAMMA = 2.2;
-const float INV_GAMMA = 1 / GAMMA;
-
 uniform sampler2D screenTexture;
+uniform sampler2D bloomTexture;
 
 in vec2 v_texPos;
 
 out vec4 colour;
 
 //const float kernelOff = 1.0 / 800.0;
-//const vec2 kernelUffsets[9] = vec2[](
+//const vec2 kernelOffsets[9] = vec2[](
 //    vec2(-kernelOff,  kernelOff), // top-left
 //    vec2( 0.0f,       kernelOff), // top-center
 //    vec2( kernelOff,  kernelOff), // top-right
@@ -36,7 +34,10 @@ out vec4 colour;
 //);
 
 void main() {
-    colour = texture(screenTexture, v_texPos);
+    vec4 screen = texture(screenTexture, v_texPos);
+    vec4 bloom = texture(bloomTexture, v_texPos);
+    colour = screen + bloom;
+
 //    colour.rgb = pow(colour.rgb, vec3(INV_GAMMA));  // gamma correction
 
 //     invert

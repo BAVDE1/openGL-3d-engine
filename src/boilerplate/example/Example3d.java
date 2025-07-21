@@ -19,8 +19,6 @@ import boilerplate.rendering.light.PointLight;
 import boilerplate.rendering.light.SpotLight;
 import boilerplate.rendering.textures.CubeMap;
 import boilerplate.rendering.textures.Texture;
-import boilerplate.rendering.textures.Texture2d;
-import boilerplate.rendering.textures.Texture2dMultisample;
 import boilerplate.utility.Logging;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -60,6 +58,8 @@ public class Example3d extends GameBase {
     SpotLight spotLight = new SpotLight(camera.getPos(), camera.getForward(), 10, 12);
 
     FrameBuffer fb = new FrameBuffer(SCREEN_SIZE);
+    FrameBuffer[] pingPongFbs = new FrameBuffer[]{new FrameBuffer(SCREEN_SIZE), new FrameBuffer(SCREEN_SIZE)};
+    ShaderProgram gaussianBlurSh = new ShaderProgram();
 
     ShaderProgram modelShader = new ShaderProgram();
     Model model = new Model();
@@ -184,16 +184,19 @@ public class Example3d extends GameBase {
         vbPost.bufferData(rectData);
 
         fb.genId();
-        fb.setupIntermediaryFB();
-        Texture2dMultisample buff = new Texture2dMultisample(SCREEN_SIZE, true);
-        buff.bind();
-        buff.createTexture2d(FrameBuffer.defaultColourBuffFormat, 4);
-        FrameBuffer.RenderBuffer rb = new FrameBuffer.RenderBuffer(true);
-        rb.createBufferMultisample(SCREEN_SIZE, GL45.GL_DEPTH24_STENCIL8, GL45.GL_DEPTH_STENCIL_ATTACHMENT, 4);
-        fb.attachColourBuffer(buff);
-        fb.attachRenderBuffer(rb);
+        fb.attachColourBuffer(fb.setupDefaultColourBuffer());
+        fb.attachColourBuffer(fb.setupDefaultColourBuffer());
+        fb.attachRenderBuffer(fb.setupDefaultRenderBuffer());
+        fb.drawToMultipleColourBuffers(0, 1);
         fb.checkCompletionOrError();
+
+        for (FrameBuffer fb : pingPongFbs) {
+            fb.genId();
+            fb.attachColourBuffer(fb.setupDefaultColourBuffer());
+            fb.checkCompletionOrError();
+        }
         FrameBuffer.unbind();
+        gaussianBlurSh.autoInitializeShadersMulti("shaders/3d_gaussian_blur.glsl");
 
         Matrix4f skyLightProjection = new Matrix4f().ortho(-8, 8, -8, 8, camera.near, camera.far);
         Matrix4f skyLightView = new Matrix4f().lookAt(skyLight.direction.negate(new Vector3f()).mul(3), new Vector3f(), new Vector3f(0, 1, 0));
@@ -347,7 +350,22 @@ public class Example3d extends GameBase {
         Renderer.drawArrays(GL_TRIANGLES, vaCube, 36);
 
         skyBox.draw();
-        fb.blitIntoIntermediaryFB(GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+        // gaussian blur for bloom
+        FrameBuffer.unbind();
+        Renderer.clearC();
+        boolean firstIter = true;
+        int amount = 10;
+        gaussianBlurSh.bind();
+        for (int i = 0; i < amount; i++) {
+            int inx = i % 2;
+            pingPongFbs[inx].bind();
+            gaussianBlurSh.uniform1i("horizontal", inx);
+            if (firstIter) fb.colourBuffers.get(1).bind();
+            else pingPongFbs[1 - inx].colourBuffers.getFirst().bind();
+            Renderer.drawArrays(GL_TRIANGLE_STRIP, vaPost, 4);
+            if (firstIter) firstIter = false;
+        }
 
         // --- POST PROCESSING --- //
         FrameBuffer.unbind();
@@ -355,8 +373,10 @@ public class Example3d extends GameBase {
         Renderer.disableDepthTest();
 
         shPost.bind();
-        fb.bindIntermediaryFBColorBuffer();
+        shPost.uniformTexture("screenTexture", fb.colourBuffers.getFirst(), 0);
+        shPost.uniformTexture("bloomTexture", pingPongFbs[1 - (amount % 2)].colourBuffers.getFirst(), 1);
         Renderer.drawArrays(GL_TRIANGLE_STRIP, vaPost, 4);
+        GL45.glActiveTexture(GL45.GL_TEXTURE0);
 
         // debug shadow map
         displayShadowMapShader.bind();

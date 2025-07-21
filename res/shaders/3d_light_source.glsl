@@ -20,8 +20,10 @@ void main() {
 
 uniform vec3 lightColour;
 
-out vec4 colour;
+layout (location = 0) out vec4 colour;
+layout (location = 1) out vec4 brightColour;
 
 void main() {
     colour = vec4(lightColour, 1);
+    brightColour = vec4(lightColour, 1);
 }
