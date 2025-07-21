@@ -361,10 +361,11 @@ public class Example3d extends GameBase {
             int inx = i % 2;
             pingPongFbs[inx].bind();
             gaussianBlurSh.uniform1i("horizontal", inx);
-            if (firstIter) fb.colourBuffers.get(1).bind();
-            else pingPongFbs[1 - inx].colourBuffers.getFirst().bind();
+            if (firstIter) {
+                fb.colourBuffers.get(1).bind();
+                firstIter = false;
+            } else pingPongFbs[1 - inx].colourBuffers.getFirst().bind();
             Renderer.drawArrays(GL_TRIANGLE_STRIP, vaPost, 4);
-            if (firstIter) firstIter = false;
         }
 
         // --- POST PROCESSING --- //

@@ -19,24 +19,21 @@ in vec2 v_texPos;
 
 out vec4 colour;
 
-uniform bool horizontal;
-uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+uniform int horizontal;
+
+const int WEIGHTS_COUNT = 5;
+const float WEIGHTS[WEIGHTS_COUNT] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
 
 void main() {
     vec2 texOffset = 1.0 / textureSize(bloomTexture, 0);
-    vec3 result = texture(bloomTexture, v_texPos).rgb * weight[0];
+    vec3 result = texture(bloomTexture, v_texPos).rgb * WEIGHTS[0];
 
-    if (horizontal) {
-        for (int i = 1; i < 5; ++i){
-            result += texture(bloomTexture, v_texPos + vec2(texOffset.x * i, 0.0)).rgb * weight[i];
-            result += texture(bloomTexture, v_texPos - vec2(texOffset.x * i, 0.0)).rgb * weight[i];
-        }
+    for (int i = 1; i < WEIGHTS_COUNT; ++i){
+        float x = texOffset.x * i * horizontal;
+        float y = texOffset.y * i * (1-horizontal);
+        result += texture(bloomTexture, v_texPos + vec2(x, y)).rgb * WEIGHTS[i];
+        result += texture(bloomTexture, v_texPos - vec2(x, y)).rgb * WEIGHTS[i];
     }
-    else {
-        for (int i = 1; i < 5; ++i){
-            result += texture(bloomTexture, v_texPos + vec2(0.0, texOffset.y * i)).rgb * weight[i];
-            result += texture(bloomTexture, v_texPos - vec2(0.0, texOffset.y * i)).rgb * weight[i];
-        }
-    }
+
     colour = vec4(result, 1.0);
 }
