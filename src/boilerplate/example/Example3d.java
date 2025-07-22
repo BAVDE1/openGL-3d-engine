@@ -19,7 +19,6 @@ import boilerplate.rendering.light.PointLight;
 import boilerplate.rendering.light.SpotLight;
 import boilerplate.rendering.textures.CubeMap;
 import boilerplate.rendering.textures.Texture;
-import boilerplate.rendering.textures.Texture2dMultisample;
 import boilerplate.utility.Logging;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -27,18 +26,19 @@ import org.joml.Vector3f;
 import org.lwjgl.opengl.GL45;
 
 import java.awt.*;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT0;
 import static org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT1;
-import static org.lwjgl.opengl.GL32.GL_TEXTURE_2D_MULTISAMPLE;
-import static org.lwjgl.opengl.GL32.GL_TEXTURE_BINDING_2D_MULTISAMPLE;
 import static org.lwjgl.opengl.GL43.glDebugMessageCallback;
 
 public class Example3d extends GameBase {
     public boilerplate.common.Window window = new Window();
     public final static Dimension SCREEN_SIZE = new Dimension(800, 800);
+    public final static Dimension SHADOW_MAP_SIZE = new Dimension(SCREEN_SIZE.width * 2, SCREEN_SIZE.height * 2);
 
     boolean renderWireFrame = false;
 
@@ -75,13 +75,16 @@ public class Example3d extends GameBase {
     Matrix4f modelFloorTrans1 = new Matrix4f().translate(-6, 1, 1).scale(4, 4, 10);
     Matrix4f modelFloorTrans2 = new Matrix4f().translate(6, 1, 1).scale(4, 4, 10);
 
-    Dimension SHADOW_MAP_SIZE = new Dimension(SCREEN_SIZE.width * 2, SCREEN_SIZE.height * 2);
     Matrix4f lightSpaceMatrix;
     VertexArray vaDisplayShadowMap = new VertexArray();
     ShaderProgram displayShadowMapShader = new ShaderProgram();
     ShaderProgram shadowMapShader = new ShaderProgram();
     FrameBuffer shadowMap = new FrameBuffer(SCREEN_SIZE);
     Matrix4f displayShadowMatrixTrans = new Matrix4f();
+
+    ShaderProgram pointShadowMapShader = new ShaderProgram();
+    List<CubeMap> pointShadowTextures = Arrays.asList(new CubeMap(), new CubeMap());
+    List<FrameBuffer> pointShadowMaps = Arrays.asList(new FrameBuffer(false), new FrameBuffer(false));
 
     @Override
     public void start() {
@@ -190,19 +193,19 @@ public class Example3d extends GameBase {
         fb.genId();
         FrameBuffer.RenderBuffer rb = new FrameBuffer.RenderBuffer(true);
         rb.createBufferMultisample(SCREEN_SIZE, GL45.GL_DEPTH24_STENCIL8, GL45.GL_DEPTH_STENCIL_ATTACHMENT, 4);
-        fb.attachColourBuffer(fb.setupDefaultColourMultisampleBuffer(4));
-        fb.attachColourBuffer(fb.setupDefaultColourMultisampleBuffer(4));
+        fb.attachColourBuffer2D(fb.setupDefaultColourMultisampleBuffer(4));
+        fb.attachColourBuffer2D(fb.setupDefaultColourMultisampleBuffer(4));
         fb.attachRenderBuffer(rb);
         fb.drawToMultipleColourBuffers(0, 1);
         fb.intermediaryFB = fb.createIntermediaryFB();
-        fb.intermediaryFB.attachColourBuffer(fb.intermediaryFB.setupDefaultColourBuffer());
-        fb.intermediaryFB.attachColourBuffer(fb.intermediaryFB.setupDefaultColourBuffer());
+        fb.intermediaryFB.attachColourBuffer2D(fb.intermediaryFB.setupDefaultColourBuffer());
+        fb.intermediaryFB.attachColourBuffer2D(fb.intermediaryFB.setupDefaultColourBuffer());
         fb.intermediaryFB.checkCompletionOrError();
         fb.checkCompletionOrError();
 
         for (FrameBuffer fb : pingPongFbs) {
             fb.genId();
-            fb.attachColourBuffer(fb.setupDefaultColourBuffer());
+            fb.attachColourBuffer2D(fb.setupDefaultColourBuffer());
             fb.checkCompletionOrError();
         }
         FrameBuffer.unbind();
@@ -217,7 +220,7 @@ public class Example3d extends GameBase {
         Texture depthMap = FrameBuffer.setupDefaultDepthBuffer(SHADOW_MAP_SIZE);
         depthMap.useNearestInterpolation();
         depthMap.useRepeatWrap();
-        shadowMap.attachDepthBuffer(depthMap);
+        shadowMap.attachDepthBuffer2D(depthMap);
         shadowMap.drawBufferNone();
         shadowMap.readBufferNone();
         shadowMap.checkCompletionOrError();
@@ -265,6 +268,24 @@ public class Example3d extends GameBase {
         skyLight.uniformValues("skyLight", modelShader);  // never changes
 
         spotLight.setColourValues(new Vector3f(1), new Vector3f(.6f), new Vector3f());
+
+        pointShadowMapShader.autoInitializeShadersMulti("shaders/3d_point_shadow_map.glsl");
+        for (int i = 0; i < 2; i++) {
+            CubeMap texture = pointShadowTextures.get(i);
+            FrameBuffer fb = pointShadowMaps.get(i);
+            texture.storedFormat = GL45.GL_DEPTH_COMPONENT;
+            texture.pixelDataType = GL_FLOAT;
+            texture.genId();
+            texture.bind();
+            for (int face = 0; face < 6; face++) texture.useCustomFace(face, SHADOW_MAP_SIZE);
+            texture.useNearestInterpolation();
+            texture.useClampEdgeWrap();
+            fb.genId();
+            fb.bind();
+            fb.attachDepthBuffer(texture);
+            fb.checkCompletionOrError();
+        }
+        FrameBuffer.unbind();
     }
 
     public void update(double dt) {
@@ -295,7 +316,7 @@ public class Example3d extends GameBase {
         matModel2.translate(0, 0, 1.2f);
         matModel2.scale(.8f, .5f, .5f);
 
-        // --- SHADOW MAP --- //
+        // --- SHADOW MAPS --- //
         shadowMap.bind();
         Renderer.setViewportSize(SHADOW_MAP_SIZE.width, SHADOW_MAP_SIZE.height);
         Renderer.clearD();
@@ -309,6 +330,22 @@ public class Example3d extends GameBase {
         model2.draw(shadowMapShader);
         model3.draw(shadowMapShader);
         model4.draw(shadowMapShader);
+        FrameBuffer.unbind();
+
+        for (FrameBuffer fb : pointShadowMaps) {
+            fb.bind();
+            Renderer.clearD();
+            Renderer.enableDepthTest();
+            Renderer.cullFrontFace();
+            modelFloor.draw(pointShadowMapShader);
+            modelFloor.draw(pointShadowMapShader, modelFloorTrans1);
+            modelFloor.draw(pointShadowMapShader, modelFloorTrans2);
+            Renderer.cullBackFace();
+            model.draw(pointShadowMapShader);
+            model2.draw(pointShadowMapShader);
+            model3.draw(pointShadowMapShader);
+            model4.draw(pointShadowMapShader);
+        }
         FrameBuffer.unbind();
         Renderer.setViewportSize(SCREEN_SIZE.width, SCREEN_SIZE.height);
 

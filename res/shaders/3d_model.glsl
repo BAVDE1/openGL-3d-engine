@@ -49,41 +49,6 @@ void main() {
     vs_out.v_texCoords = texCoords;
 }
 
-//--- GEOM
-#version 450 core
-layout (triangles) in;
-layout (triangle_strip, max_vertices = 3) out;
-
-in VS_OUT {
-    vec3 v_fragPos;
-    vec4 v_fragPosLightSpace;
-    vec3 v_normal;
-    vec2 v_texCoords;
-} gs_in[];
-
-out GS_OUT {
-    vec3 v_fragPos;
-    vec4 v_fragPosLightSpace;
-    vec3 v_normal;
-    vec2 v_texCoords;
-} gs_out;
-
-void vert(int index) {
-    gl_Position = gl_in[index].gl_Position;
-    gs_out.v_fragPos = gs_in[index].v_fragPos;
-    gs_out.v_fragPosLightSpace = gs_in[index].v_fragPosLightSpace;
-    gs_out.v_normal = gs_in[index].v_normal;
-    gs_out.v_texCoords = gs_in[index].v_texCoords;
-    EmitVertex();
-}
-
-void main() {
-    vert(0);
-    vert(1);
-    vert(2);
-    EndPrimitive();
-}
-
 //--- FRAG
 #version 450 core
 
@@ -131,7 +96,7 @@ struct SpotLight {
     float quadratic;
 };
 
-vec3 gammaSpace(vec3 linCol);
+vec3 gammaEncode(vec3 col);
 vec3 calcPointLight(PointLight light, vec3 normal, vec3 diffuseTexture);
 vec3 calcDirectionLighting(vec3 normal, vec3 diffuseTexture);
 vec3 calcSpotLight(vec3 normal, vec3 diffuseTexture);
@@ -164,64 +129,63 @@ uniform float flashLightStrength;
 uniform vec3 viewPos;
 uniform sampler2D shadowMap;
 
-in GS_OUT {
+in VS_OUT {
     vec3 v_fragPos;
     vec4 v_fragPosLightSpace;
     vec3 v_normal;
     vec2 v_texCoords;
-} gs_in;
+} fs_in;
 
 layout (location = 0) out vec4 colour;
 layout (location = 1) out vec4 brightColour;
 
 void main() {
-    vec3 normal = normalize(gs_in.v_normal);
-    vec3 hdrCol = texture(material.diffuseTexture, gs_in.v_texCoords).xyz;
+    vec3 normal = normalize(fs_in.v_normal);
+    vec3 hdrCol = texture(material.diffuseTexture, fs_in.v_texCoords).xyz;
     vec3 mapped = vec3(1) - exp(-hdrCol * EXPOSURE);
-    vec3 gammaCol = gammaSpace(mapped);
+    vec3 col = gammaEncode(mapped);
 
     vec3 finalCol = vec3(0);
-    finalCol += calcDirectionLighting(normal, gammaCol);
+    finalCol += calcDirectionLighting(normal, col);
     for (int i = 0; i < LIGHT_COUNT; i++) {
-        finalCol += calcPointLight(lights[i], normal, gammaCol);
+        finalCol += calcPointLight(lights[i], normal, col);
     }
-    finalCol += calcSpotLight(normal, gammaCol) * flashLightStrength;
-
+    finalCol += calcSpotLight(normal, col) * flashLightStrength;
     colour = vec4(finalCol, 1);
 
-    float brightness = dot(colour.rgb, vec3(0.2126, 0.7152, 0.0722));
+    float brightness = dot(colour.rgb, vec3(0.2126, 0.7152, 0.0722));  // relative luminance
     if (brightness > 1.3) brightColour = vec4(colour.rgb, 1.0);
     else brightColour = vec4(0.0, 0.0, 0.0, 1.0);
 }
 
-vec3 gammaSpace(vec3 linCol) {
-    return pow(linCol, vec3(1 / GAMMA));
+vec3 gammaEncode(vec3 col) {
+    return pow(col, vec3(1 / GAMMA));
 }
 
 float calcAttenuation(vec3 lightPos, float c, float l, float q) {
-    float distance = length(lightPos - gs_in.v_fragPos);
+    float distance = length(lightPos - fs_in.v_fragPos);
     return 1.0 / (c + l * distance + q * (distance * distance));
 }
 
 vec3 calcPointLight(PointLight light, vec3 normal, vec3 diffuseTexture) {
     float attenuation = calcAttenuation(light.position, light.constant, light.linear, light.quadratic);
-    vec3 viewDir = normalize(viewPos - gs_in.v_fragPos);
-    vec3 lightDir = normalize(light.position - gs_in.v_fragPos);
+    vec3 viewDir = normalize(viewPos - fs_in.v_fragPos);
+    vec3 lightDir = normalize(light.position - fs_in.v_fragPos);
     return calcLightingShadow(attenuation, viewDir, lightDir, normal, diffuseTexture, light.ambient, light.diffuse, light.specular);
 }
 
 vec3 calcDirectionLighting(vec3 normal, vec3 diffuseTexture) {
-    vec3 viewDir = normalize(viewPos - gs_in.v_fragPos);
+    vec3 viewDir = normalize(viewPos - fs_in.v_fragPos);
     vec3 lightDir = normalize(-skyLight.direction);
     return calcLightingShadow(1, viewDir, lightDir, normal, diffuseTexture, skyLight.ambient, skyLight.diffuse, skyLight.specular);
 }
 
 vec3 calcSpotLight(vec3 normal, vec3 diffuseTexture) {
-    vec3 lightDir = normalize(spotLight.position - gs_in.v_fragPos);
+    vec3 lightDir = normalize(spotLight.position - fs_in.v_fragPos);
     float theta = dot(lightDir, normalize(-spotLight.direction));
     if (theta > spotLight.outerCutoff) {  // cause of cosine: 0 degrees == cos 1, 90 degrees == cos 0
         float attenuation = calcAttenuation(spotLight.position, spotLight.constant, spotLight.linear, spotLight.quadratic);
-        vec3 viewDir = normalize(viewPos - gs_in.v_fragPos);
+        vec3 viewDir = normalize(viewPos - fs_in.v_fragPos);
         float intensity = clamp((theta - spotLight.outerCutoff) / (spotLight.cutoff - spotLight.outerCutoff), 0, 1);
         return calcLighting(attenuation * intensity, viewDir, lightDir, normal, diffuseTexture, spotLight.ambient, spotLight.diffuse, spotLight.specular);
     }
@@ -230,7 +194,7 @@ vec3 calcSpotLight(vec3 normal, vec3 diffuseTexture) {
 
 float calcShadow(vec3 normal, vec3 lightDir) {
     float shadow = 0;
-    vec3 projCoords = gs_in.v_fragPosLightSpace.xyz / gs_in.v_fragPosLightSpace.w;
+    vec3 projCoords = fs_in.v_fragPosLightSpace.xyz / fs_in.v_fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
     for (int i = 0; i < 9; i++) {
         float pcfDepth = texture(shadowMap, projCoords.xy + SHADOW_MAP_OFFSETS[i]).r;

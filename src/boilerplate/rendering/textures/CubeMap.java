@@ -3,6 +3,9 @@ package boilerplate.rendering.textures;
 import boilerplate.utility.Logging;
 import org.lwjgl.opengl.GL45;
 
+import java.awt.*;
+import java.nio.ByteBuffer;
+
 /**
  * faces order:
  * 1: right  (+x)
@@ -53,6 +56,15 @@ public class CubeMap extends Texture {
             Image image = faces[i];
             GL45.glTexImage2D(GL45.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, storedFormat, image.width, image.height, 0, image.getImageFormat(), pixelDataType, image.buffer);
         }
+    }
+
+    public void useCustomFace(int faceIndex, Dimension size) {
+        if (faceIndex < 0 || faceIndex > 5) {
+            Logging.danger("Given face index (%s) is out of bounds.", faceIndex);
+            return;
+        }
+
+        GL45.glTexImage2D(GL45.GL_TEXTURE_CUBE_MAP_POSITIVE_X + faceIndex, 0, storedFormat, size.width, size.height, 0, storedFormat, pixelDataType, (ByteBuffer) null);
     }
 
     public static void unbind() {
