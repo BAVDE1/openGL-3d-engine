@@ -21,8 +21,8 @@ out vec4 colour;
 
 uniform int horizontal;
 
-const int WEIGHTS_COUNT = 5;
-const float WEIGHTS[WEIGHTS_COUNT] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+const int WEIGHTS_COUNT = 6;
+const float WEIGHTS[WEIGHTS_COUNT] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.03, 0.016216);
 
 void main() {
     vec2 texOffset = 1.0 / textureSize(bloomTexture, 0);

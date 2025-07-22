@@ -99,7 +99,6 @@ public class Example3d extends GameBase {
         Renderer.enableStencilTest();
         Renderer.setStencilOperation(GL_KEEP, GL_KEEP, GL_REPLACE);
         Renderer.useDefaultFaceCulling();
-//        Renderer.enableFramebufferGamma();
         Renderer.setViewportSize(SCREEN_SIZE.width, SCREEN_SIZE.height);
 
         bindEvents();
@@ -368,7 +367,7 @@ public class Example3d extends GameBase {
         FrameBuffer.unbind();
         Renderer.clearC();
         boolean firstIter = true;
-        int amount = 10;
+        int amount = 3;
         gaussianBlurSh.bind();
         for (int i = 0; i < amount; i++) {
             int inx = i % 2;

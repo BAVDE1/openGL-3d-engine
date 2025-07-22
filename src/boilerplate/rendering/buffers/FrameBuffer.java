@@ -118,9 +118,11 @@ public class FrameBuffer {
         GL45.glBlitFramebuffer(0, 0, size.width, size.height, 0, 0, frameBuffer.size.width, frameBuffer.size.height, mask, interpolation);
     }
 
-    public void blitIntoDefaultFrameBuffer(Dimension destinationSize, int mask, int interpolation) {
+    public void blitIntoDefaultFrameBuffer(Dimension destinationSize, int mask, int interpolation, int readBuffer, int drawBuffer) {
         bindToRead();
         unbindFromDraw();
+        GL45.glReadBuffer(readBuffer);
+        GL45.glDrawBuffer(drawBuffer);
         GL45.glBlitFramebuffer(0, 0, size.width, size.height, 0, 0, destinationSize.width, destinationSize.height, mask, interpolation);
     }
 
