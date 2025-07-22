@@ -140,8 +140,7 @@ public class ShaderProgram {
         int[] shaderCompiled = new int[1];  // only needs size of 1
         glGetShaderiv(shader, GL_COMPILE_STATUS, shaderCompiled);
         if (shaderCompiled[0] != GL_TRUE) {
-            Logging.danger("Shader Compile Error (%s): %s", filePath, glGetShaderInfoLog(shader, 1024));
-            return;
+            throw new RuntimeException("Shader Compile Error (%s): %s".formatted(filePath, glGetShaderInfoLog(shader, 1024)));
         }
 
         glAttachShader(program, shader);
@@ -157,8 +156,7 @@ public class ShaderProgram {
 
         glGetProgramiv(program, GL_LINK_STATUS, programLinked);
         if (programLinked[0] != GL_TRUE) {
-            Logging.danger("Shader Linking Error: %s", glGetProgramInfoLog(program, 1024));
-            return;
+            throw new RuntimeException("Shader Linking Error: %s".formatted(glGetProgramInfoLog(program, 1024)));
         }
         Logging.debug("Shaders linked to program %s: %s", program, attachedShaders);
     }
