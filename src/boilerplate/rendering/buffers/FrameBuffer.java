@@ -102,20 +102,19 @@ public class FrameBuffer {
         this.size = bufferSize;
     }
 
-    public void setupIntermediaryFB() {
-        intermediaryFB = new FrameBuffer(true, size);
-        intermediaryFB.attachColourBuffer(intermediaryFB.setupDefaultColourBuffer());
-        intermediaryFB.attachColourBuffer(intermediaryFB.setupDefaultColourBuffer());
-        intermediaryFB.checkCompletionOrError();
+    public FrameBuffer createIntermediaryFB() {
+        return new FrameBuffer(true, size);
     }
 
-    public void blitIntoIntermediaryFB(int mask, int interpolation) {
-        blitIntoFrameBuffer(intermediaryFB, mask, interpolation);
+    public void blitIntoIntermediaryFB(int mask, int interpolation, int readBuffer, int drawBuffer) {
+        blitIntoFrameBuffer(intermediaryFB, mask, interpolation, readBuffer, drawBuffer);
     }
 
-    public void blitIntoFrameBuffer(FrameBuffer frameBuffer, int mask, int interpolation) {
+    public void blitIntoFrameBuffer(FrameBuffer frameBuffer, int mask, int interpolation, int readBuffer, int drawBuffer) {
         bindToRead();
         frameBuffer.bindToDraw();
+        GL45.glReadBuffer(readBuffer);
+        GL45.glDrawBuffer(drawBuffer);
         GL45.glBlitFramebuffer(0, 0, size.width, size.height, 0, 0, frameBuffer.size.width, frameBuffer.size.height, mask, interpolation);
     }
 
@@ -169,6 +168,17 @@ public class FrameBuffer {
         Texture t = setupTextureBuffer(size, defaultColourBuffStoredFormat, defaultColourBuffGivenFormat, GL45.GL_UNSIGNED_BYTE);
         t.useNearestInterpolation();
         t.useClampEdgeWrap();
+        return t;
+    }
+
+    public Texture setupDefaultColourMultisampleBuffer(int samples) {
+        return setupDefaultColourMultisampleBuffer(size, samples);
+    }
+
+    public static Texture setupDefaultColourMultisampleBuffer(Dimension size, int samples) {
+        Texture2dMultisample t = new Texture2dMultisample(size, true);
+        t.bind();
+        t.createTexture2d(FrameBuffer.defaultColourBuffStoredFormat, samples);
         return t;
     }
 

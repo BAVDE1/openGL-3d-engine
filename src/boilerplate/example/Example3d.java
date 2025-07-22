@@ -19,6 +19,7 @@ import boilerplate.rendering.light.PointLight;
 import boilerplate.rendering.light.SpotLight;
 import boilerplate.rendering.textures.CubeMap;
 import boilerplate.rendering.textures.Texture;
+import boilerplate.rendering.textures.Texture2dMultisample;
 import boilerplate.utility.Logging;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -29,6 +30,10 @@ import java.awt.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT0;
+import static org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT1;
+import static org.lwjgl.opengl.GL32.GL_TEXTURE_2D_MULTISAMPLE;
+import static org.lwjgl.opengl.GL32.GL_TEXTURE_BINDING_2D_MULTISAMPLE;
 import static org.lwjgl.opengl.GL43.glDebugMessageCallback;
 
 public class Example3d extends GameBase {
@@ -184,10 +189,16 @@ public class Example3d extends GameBase {
         vbPost.bufferData(rectData);
 
         fb.genId();
-        fb.attachColourBuffer(fb.setupDefaultColourBuffer());
-        fb.attachColourBuffer(fb.setupDefaultColourBuffer());
-        fb.attachRenderBuffer(fb.setupDefaultRenderBuffer());
+        FrameBuffer.RenderBuffer rb = new FrameBuffer.RenderBuffer(true);
+        rb.createBufferMultisample(SCREEN_SIZE, GL45.GL_DEPTH24_STENCIL8, GL45.GL_DEPTH_STENCIL_ATTACHMENT, 4);
+        fb.attachColourBuffer(fb.setupDefaultColourMultisampleBuffer(4));
+        fb.attachColourBuffer(fb.setupDefaultColourMultisampleBuffer(4));
+        fb.attachRenderBuffer(rb);
         fb.drawToMultipleColourBuffers(0, 1);
+        fb.intermediaryFB = fb.createIntermediaryFB();
+        fb.intermediaryFB.attachColourBuffer(fb.intermediaryFB.setupDefaultColourBuffer());
+        fb.intermediaryFB.attachColourBuffer(fb.intermediaryFB.setupDefaultColourBuffer());
+        fb.intermediaryFB.checkCompletionOrError();
         fb.checkCompletionOrError();
 
         for (FrameBuffer fb : pingPongFbs) {
@@ -350,6 +361,8 @@ public class Example3d extends GameBase {
         Renderer.drawArrays(GL_TRIANGLES, vaCube, 36);
 
         skyBox.draw();
+        fb.blitIntoIntermediaryFB(GL_COLOR_BUFFER_BIT, GL_NEAREST, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT0);
+        fb.blitIntoIntermediaryFB(GL_COLOR_BUFFER_BIT, GL_NEAREST, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT1);
 
         // gaussian blur for bloom
         FrameBuffer.unbind();
@@ -362,7 +375,7 @@ public class Example3d extends GameBase {
             pingPongFbs[inx].bind();
             gaussianBlurSh.uniform1i("horizontal", inx);
             if (firstIter) {
-                fb.colourBuffers.get(1).bind();
+                fb.intermediaryFB.colourBuffers.get(1).bind();
                 firstIter = false;
             } else pingPongFbs[1 - inx].colourBuffers.getFirst().bind();
             Renderer.drawArrays(GL_TRIANGLE_STRIP, vaPost, 4);
@@ -374,7 +387,7 @@ public class Example3d extends GameBase {
         Renderer.disableDepthTest();
 
         shPost.bind();
-        shPost.uniformTexture("screenTexture", fb.colourBuffers.getFirst(), 0);
+        shPost.uniformTexture("screenTexture", fb.intermediaryFB.colourBuffers.getFirst(), 0);
         shPost.uniformTexture("bloomTexture", pingPongFbs[1 - (amount % 2)].colourBuffers.getFirst(), 1);
         Renderer.drawArrays(GL_TRIANGLE_STRIP, vaPost, 4);
         GL45.glActiveTexture(GL45.GL_TEXTURE0);
