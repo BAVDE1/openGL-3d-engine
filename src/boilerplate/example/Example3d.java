@@ -20,6 +20,7 @@ import boilerplate.rendering.light.SpotLight;
 import boilerplate.rendering.textures.CubeMap;
 import boilerplate.rendering.textures.Texture;
 import boilerplate.utility.Logging;
+import boilerplate.utility.MathUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -82,6 +83,7 @@ public class Example3d extends GameBase {
     FrameBuffer shadowMap = new FrameBuffer(SCREEN_SIZE);
     Matrix4f displayShadowMatrixTrans = new Matrix4f();
 
+    Matrix4f pointShadowProjection;
     ShaderProgram pointShadowMapShader = new ShaderProgram();
     List<CubeMap> pointShadowTextures = Arrays.asList(new CubeMap(), new CubeMap());
     List<FrameBuffer> pointShadowMaps = Arrays.asList(new FrameBuffer(false), new FrameBuffer(false));
@@ -286,6 +288,18 @@ public class Example3d extends GameBase {
             fb.checkCompletionOrError();
         }
         FrameBuffer.unbind();
+        pointShadowProjection = new Matrix4f().perspective((float) Math.toRadians(90), (float) SHADOW_MAP_SIZE.width / (float) SHADOW_MAP_SIZE.height, camera.near, camera.far);
+    }
+
+    public Matrix4f[] generatePointShadowTransformMatrices(PointLight light) {
+        return new Matrix4f[] {
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(1, 0, 0, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f()),
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(-1, 0, 0, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f()),
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, 1, 0, new Vector3f()), new Vector3f(0, 0, 1)), new Matrix4f()),
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, -1, 0, new Vector3f()), new Vector3f(0, 0, -1)), new Matrix4f()),
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, 0, 1, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f()),
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, 0, -1, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f())
+        };
     }
 
     public void update(double dt) {
