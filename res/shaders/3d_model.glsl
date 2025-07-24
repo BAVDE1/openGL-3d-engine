@@ -61,27 +61,7 @@ struct Material {
     float shininess;
 };
 
-struct PointLight {
-    vec3 position;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-
-    float constant;
-    float linear;
-    float quadratic;
-};
-
-struct DirectionalLight {
-    vec3 direction;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};
-
-struct SpotLight {
+struct Light {
     vec3 position;
     vec3 direction;
     float cutoff;
@@ -103,11 +83,11 @@ struct BlinnPhong {
 };
 
 vec3 gammaEncode(vec3 col);
-vec3 calcPointLight(PointLight light, vec3 normal, vec3 diffuseTexture);
+vec3 calcPointLight(Light light, vec3 normal, vec3 diffuseTexture);
 vec3 calcDirectionLighting(vec3 normal, vec3 diffuseTexture);
 vec3 calcSpotLight(vec3 normal, vec3 diffuseTexture);
-vec3 calcLightingShadow(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular);
-vec3 calcLighting(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular);
+vec3 calcLightingWithShadows(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, Light light);
+vec3 calcLighting(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, Light light);
 
 const float GAMMA = 1.5;
 const float EXPOSURE = .8;
@@ -137,9 +117,9 @@ const vec3 POINT_SHADOW_MAP_OFFSETS[20] = vec3[](
 );
 
 uniform Material material;
-uniform PointLight lights[LIGHT_COUNT];
-uniform DirectionalLight skyLight;
-uniform SpotLight spotLight;
+uniform Light pointLights[LIGHT_COUNT];
+uniform Light skyLight;
+uniform Light spotLight;
 uniform float flashLightStrength;
 uniform vec3 viewPos;
 uniform float farPlane;
@@ -166,7 +146,7 @@ void main() {
     vec3 finalCol = vec3(0);
     finalCol += calcDirectionLighting(normal, col);
     for (int i = 0; i < LIGHT_COUNT; i++) {
-        finalCol += calcPointLight(lights[i], normal, col);
+        finalCol += calcPointLight(pointLights[i], normal, col);
     }
     finalCol += calcSpotLight(normal, col) * flashLightStrength;
     colour = vec4(finalCol, 1);
@@ -180,38 +160,38 @@ vec3 gammaEncode(vec3 col) {
     return pow(col, vec3(1 / GAMMA));
 }
 
-float calcAttenuation(vec3 lightPos, float c, float l, float q) {
-    float distance = length(lightPos - fs_in.v_fragPos);
-    return 1.0 / (c + l * distance + q * (distance * distance));
+float calcAttenuation(Light light) {
+    float distance = length(light.position - fs_in.v_fragPos);
+    return 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 }
 
-vec3 calcPointLight(PointLight light, vec3 normal, vec3 diffuseTexture) {
-    float attenuation = calcAttenuation(light.position, light.constant, light.linear, light.quadratic);
+vec3 calcPointLight(Light light, vec3 normal, vec3 diffuseTexture) {
+    float attenuation = calcAttenuation(light);
     vec3 viewDir = normalize(viewPos - fs_in.v_fragPos);
     vec3 lightDir = normalize(light.position - fs_in.v_fragPos);
-    return calcLightingShadow(attenuation, viewDir, lightDir, normal, diffuseTexture, light.ambient, light.diffuse, light.specular);
+    return calcLightingWithShadows(attenuation, viewDir, lightDir, normal, diffuseTexture, light);
 }
 
 vec3 calcDirectionLighting(vec3 normal, vec3 diffuseTexture) {
     vec3 viewDir = normalize(viewPos - fs_in.v_fragPos);
     vec3 lightDir = normalize(-skyLight.direction);
-    return calcLightingShadow(1, viewDir, lightDir, normal, diffuseTexture, skyLight.ambient, skyLight.diffuse, skyLight.specular);
+    return calcLightingWithShadows(1, viewDir, lightDir, normal, diffuseTexture, skyLight);
 }
 
 vec3 calcSpotLight(vec3 normal, vec3 diffuseTexture) {
     vec3 lightDir = normalize(spotLight.position - fs_in.v_fragPos);
     float theta = dot(lightDir, normalize(-spotLight.direction));
     if (theta > spotLight.outerCutoff) {  // cause of cosine: 0 degrees == cos 1, 90 degrees == cos 0
-        float attenuation = calcAttenuation(spotLight.position, spotLight.constant, spotLight.linear, spotLight.quadratic);
+        float attenuation = calcAttenuation(spotLight);
         vec3 viewDir = normalize(viewPos - fs_in.v_fragPos);
         float intensity = clamp((theta - spotLight.outerCutoff) / (spotLight.cutoff - spotLight.outerCutoff), 0, 1);
-        return calcLighting(attenuation * intensity, viewDir, lightDir, normal, diffuseTexture, spotLight.ambient, spotLight.diffuse, spotLight.specular);
+        return calcLighting(attenuation * intensity, viewDir, lightDir, normal, diffuseTexture, spotLight);
     }
     return vec3(spotLight.ambient * diffuseTexture);
 }
 
-float calcDirShadow(vec3 normal, vec3 lightDir) {
-    float shadow = 0;
+vec3 calcDirShadow() {
+    vec3 shadow = vec3(0);
     vec3 projCoords = fs_in.v_fragPosLightSpace.xyz / fs_in.v_fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
     for (int i = 0; i < 9; i++) {
@@ -221,43 +201,46 @@ float calcDirShadow(vec3 normal, vec3 lightDir) {
     return shadow / 9;
 }
 
-vec3 calcPointShadow(float attenuation) {
+vec3 calcPointShadows() {
     vec3 shadow = vec3(0);
     for (int i = 0; i < LIGHT_COUNT; i++) {
-        vec3 fragToLight = fs_in.v_fragPos - lights[i].position;
+        vec3 fragToLight = fs_in.v_fragPos - pointLights[i].position;
         float closestDepth = texture(pointShadowMaps[i], fragToLight).r * farPlane;
         float currentDepth = length(fragToLight);
-//        shadow += currentDepth - POINT_SHADOW_BIAS > closestDepth ? .5 : 0;
+        float attenuation = calcAttenuation(pointLights[i]);
         float addition = 0;
         for (int s = 0; s < 20; s++) {
             float closestDepth = texture(pointShadowMaps[i], fragToLight + POINT_SHADOW_MAP_OFFSETS[s] * .02).r * farPlane;
             addition += currentDepth - SHADOW_BIAS > closestDepth ? 1 : 0;
         }
-        shadow += (lights[i].diffuse * attenuation) * addition / 20;
+        shadow += (pointLights[i].diffuse * attenuation) * addition / 20;
     }
     return shadow / LIGHT_COUNT;
 }
 
-BlinnPhong blinnPhongComponents(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular) {
+vec3 calcShadows() {
+    return (1 - calcDirShadow()) * (1 - calcPointShadows());
+}
+
+BlinnPhong blinnPhongComponents(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, Light light) {
     float diff = max(dot(lightDir, normal), 0);
 
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0), material.shininess);
 
-    vec3 ambient = lightAmbient * diffuseTexture;
-    vec3 diffuse = lightDiffuse * (diff * diffuseTexture);
-    vec3 specular = lightSpecular * (spec * material.specular);
-    return BlinnPhong(ambient, diffuse, specular);
+    return BlinnPhong(
+        light.ambient * diffuseTexture,
+        light.diffuse * (diff * diffuseTexture),
+        light.specular * (spec * material.specular)
+    );
 }
 
-vec3 calcLightingShadow(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular) {
-    BlinnPhong bp = blinnPhongComponents(viewDir, lightDir, normal, diffuseTexture, lightAmbient, lightDiffuse, lightSpecular);
-    float directionShadow = 1 - calcDirShadow(normal, lightDir);
-    vec3 pointShadow = 1 - calcPointShadow(attenuation);
-    return vec3(bp.ambient * attenuation + (pointShadow * directionShadow) * (bp.diffuse * attenuation + bp.specular * attenuation));
+vec3 calcLightingWithShadows(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, Light light) {
+    BlinnPhong bp = blinnPhongComponents(viewDir, lightDir, normal, diffuseTexture, light);
+    return vec3(bp.ambient * attenuation + calcShadows() * (bp.diffuse * attenuation + bp.specular * attenuation));
 }
 
-vec3 calcLighting(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular) {
-    BlinnPhong bp = blinnPhongComponents(viewDir, lightDir, normal, diffuseTexture, lightAmbient, lightDiffuse, lightSpecular);
+vec3 calcLighting(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, Light light) {
+    BlinnPhong bp = blinnPhongComponents(viewDir, lightDir, normal, diffuseTexture, light);
     return vec3(bp.ambient * attenuation + bp.diffuse * attenuation + bp.specular * attenuation);
 }

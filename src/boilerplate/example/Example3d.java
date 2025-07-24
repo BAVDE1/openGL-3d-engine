@@ -250,7 +250,7 @@ public class Example3d extends GameBase {
         camera.bindShaderToUniformBlock(modelShader);
 
         modelFloor.loadModel("res/models/crate/NEWCRATE.fbx", true);
-        modelFloor.modelTransform.translate(0, -6, 1).scale(10, 10, 10);
+        modelFloor.modelTransform.translate(0, -6, 1).scale(10, 10, 22);
 
         model.loadModel("res/models/roblox/scene.gltf", true);
         model.modelTransform.translate(-2, -1f, 1).rotateY(1);
@@ -270,7 +270,7 @@ public class Example3d extends GameBase {
         lightBlue.setColourValues(new Vector3f(0, 0, 2), new Vector3f(0, 0, .8f), new Vector3f());
         lightGroup.addLight(lightRed, lightBlue);
 
-        skyLight.diffuse = new Vector3f(.6f);
+        skyLight.diffuse = new Vector3f(.8f);
         skyLight.specular = new Vector3f(.2f);
         skyLight.ambient = new Vector3f(.3f);
         skyLight.uniformValues("skyLight", modelShader);  // never changes
@@ -328,9 +328,7 @@ public class Example3d extends GameBase {
         lightRed.position.x = 3 * (float) Math.cos(t);
         lightBlue.position.z = (float) Math.cos(t);
         lightBlue.position.x = (float) Math.sin(t);
-//        lightBlue.position.y = 1 + 3 * (float) Math.abs(Math.sin(t));
-//        lightBlue.position.z = 3 * (float) Math.cos(t);
-        lightGroup.uniformValuesAsArray("lights", modelShader);
+        lightGroup.uniformValuesAsArray("pointLights", modelShader);
         spotLight.position = camera.getPos();
         spotLight.direction = camera.getForward();
         spotLight.uniformValues("spotLight", modelShader);
@@ -371,14 +369,9 @@ public class Example3d extends GameBase {
             fb.bind();
             Renderer.clearD();
             Renderer.enableDepthTest();
-            Renderer.cullFrontFace();
             pointShadowMapShader.uniformMatrix4fArray("shadowMatrices", generatePointShadowTransformMatrices(light));
             pointShadowMapShader.uniform3f("lightPos", light.position);
             pointShadowMapShader.uniform1f("farPlane", camera.far);
-            modelFloor.draw(pointShadowMapShader, 0);
-            modelFloor.draw(pointShadowMapShader, 0, modelFloorTrans1);
-            modelFloor.draw(pointShadowMapShader, 0, modelFloorTrans2);
-            Renderer.cullBackFace();
             model.draw(pointShadowMapShader, 0);
             model2.draw(pointShadowMapShader, 0);
             model3.draw(pointShadowMapShader, 0);
@@ -444,9 +437,9 @@ public class Example3d extends GameBase {
         FrameBuffer.unbind();
         Renderer.clearC();
         boolean firstIter = true;
-        int amount = 3;
+        int gaussianAmount = 4;
         gaussianBlurSh.bind();
-        for (int i = 0; i < amount; i++) {
+        for (int i = 0; i < gaussianAmount; i++) {
             int inx = i % 2;
             pingPongFbs[inx].bind();
             gaussianBlurSh.uniform1i("horizontal", inx);
@@ -464,7 +457,7 @@ public class Example3d extends GameBase {
 
         shPost.bind();
         shPost.uniformTexture("screenTexture", fb.intermediaryFB.colourBuffers.getFirst(), 0);
-        shPost.uniformTexture("bloomTexture", pingPongFbs[1 - (amount % 2)].colourBuffers.getFirst(), 1);
+        shPost.uniformTexture("bloomTexture", pingPongFbs[1 - (gaussianAmount % 2)].colourBuffers.getFirst(), 1);
         Renderer.drawArrays(GL_TRIANGLE_STRIP, vaPost, 4);
         GL45.glActiveTexture(GL45.GL_TEXTURE0);
 
