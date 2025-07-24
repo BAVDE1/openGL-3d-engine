@@ -120,10 +120,10 @@ public class Mesh {
         veb.bufferData(indices);
     }
 
-    public void draw(ShaderProgram sh) {
+    public void draw(ShaderProgram sh, int textureSlotStart) {
         if (!hasUniformedValues) {
             material.uniformValues("material", sh);
-            material.uniformAndBindTextures("material", sh);
+            material.uniformAndBindTextures("material", sh, textureSlotStart);
         }
         Renderer.drawElements(renderMode, va, veb, indicesCount);
     }

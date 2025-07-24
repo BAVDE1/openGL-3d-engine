@@ -275,6 +275,12 @@ public class ShaderProgram {
         uniformMatrix4f(uniform, MathUtils.matrixToBuff(m));
     }
 
+    public void uniformMatrix4fArray(String uniform, Matrix4f... matrices) {
+        for (int i = 0; i < matrices.length; i++) {
+            uniformMatrix4f(uniform + "[%s]".formatted(i), matrices[i]);
+        }
+    }
+
     public void uniformMatrix4f(String uniform, FloatBuffer buffer) {
         glUniformMatrix4fv(getUniformLocation(uniform), false, buffer);
     }

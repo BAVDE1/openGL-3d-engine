@@ -401,11 +401,11 @@ public class Model {
         animator.update((float) dt);
     }
 
-    public void draw(ShaderProgram shaderProgram) {
-        draw(shaderProgram, modelTransform);
+    public void draw(ShaderProgram shaderProgram, int textureSlotStart) {
+        draw(shaderProgram, textureSlotStart, modelTransform);
     }
 
-    public void draw(ShaderProgram shaderProgram, Matrix4f modelTransformOverride) {
+    public void draw(ShaderProgram shaderProgram, int textureSlotStart, Matrix4f modelTransformOverride) {
         shaderProgram.bind();
 
         for (int i = 0; i < boneCounter; i++) {
@@ -413,7 +413,7 @@ public class Model {
         }
 
         shaderProgram.uniformMatrix4f(modelUniform, modelTransformOverride);
-        for (Mesh mesh : meshes) mesh.draw(shaderProgram);
+        for (Mesh mesh : meshes) mesh.draw(shaderProgram, textureSlotStart);
         GL45.glActiveTexture(GL45.GL_TEXTURE0);
         if (renderBones) renderBones();
     }

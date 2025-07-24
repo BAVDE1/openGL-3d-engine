@@ -11,8 +11,6 @@ layout(location = 5) in int isStatic;
 const int MAX_BONES = 200;
 const int MAX_BONE_INFLUENCE = 4;
 
-uniform mat4 lightSpaceMatrix;
-
 uniform mat4 model;
 uniform mat4 finalBonesMatrices[MAX_BONES];
 
@@ -30,12 +28,40 @@ void main() {
     }
 
     vec4 finalPos = animTransformation * vec4(pos, 1);
-    gl_Position = lightSpaceMatrix * (model * finalPos);
+    gl_Position = model * finalPos;
+}
+
+//--- GEOM
+#version 450 core
+layout (triangles) in;
+layout (triangle_strip, max_vertices=18) out;
+
+uniform mat4 shadowMatrices[6];
+
+out vec4 v_fragPos;
+
+void main() {
+    for (int face = 0; face < 6; ++face) {
+        gl_Layer = face;  // built-in variable that specifies to which face of the cubemap we render.
+        for (int i = 0; i < 3; ++i) {
+            v_fragPos = gl_in[i].gl_Position;
+            gl_Position = shadowMatrices[face] * v_fragPos;
+            EmitVertex();
+        }
+        EndPrimitive();
+    }
 }
 
 //--- FRAG
 #version 450 core
 
-void main() {
+uniform vec3 lightPos;
+uniform float farPlane;
 
+in vec4 v_fragPos;
+
+void main() {
+    // map to [0;1] range
+    float lightDistance = length(v_fragPos.xyz - lightPos);
+    gl_FragDepth = lightDistance / farPlane;
 }

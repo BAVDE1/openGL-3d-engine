@@ -53,8 +53,8 @@ public class Material {
         if (shininess != null) sh.uniform1f(uniform + ".shininess", shininess);
     }
 
-    public void uniformAndBindTextures(String uniform, ShaderProgram sh) {
-        int texSlot = 1;
+    public void uniformAndBindTextures(String uniform, ShaderProgram sh, int textureSlotStart) {
+        int texSlot = textureSlotStart;
         if (diffuseTexture != null) sh.uniformTexture(uniform + ".diffuseTexture", diffuseTexture, texSlot++);
         if (specularMap != null) sh.uniformTexture(uniform + ".specularMap", specularMap, texSlot++);
     }

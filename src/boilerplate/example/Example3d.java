@@ -57,8 +57,8 @@ public class Example3d extends GameBase {
     CubeMap ballerCube = new CubeMap();
     SkyBox skyBox = new SkyBox();
 
-    PointLight lightRed = new PointLight(new Vector3f(0));
-    PointLight lightBlue = new PointLight(new Vector3f(0));
+    PointLight lightRed = new PointLight(new Vector3f(0, 1, 0));
+    PointLight lightBlue = new PointLight(new Vector3f(0, 2, 0));
     Light.LightGroup lightGroup = new Light.LightGroup();
     DirectionalLight skyLight = new DirectionalLight(new Vector3f(0, -1, 1));
     SpotLight spotLight = new SpotLight(camera.getPos(), camera.getForward(), 10, 12);
@@ -73,8 +73,8 @@ public class Example3d extends GameBase {
     Model model3 = new Model();
     Model model4 = new Model();
     Model modelFloor = new Model();
-    Matrix4f modelFloorTrans1 = new Matrix4f().translate(-6, 1, 1).scale(4, 4, 10);
-    Matrix4f modelFloorTrans2 = new Matrix4f().translate(6, 1, 1).scale(4, 4, 10);
+    Matrix4f modelFloorTrans1 = new Matrix4f().translate(-6, 1, 1).scale(4, 5, 10);
+    Matrix4f modelFloorTrans2 = new Matrix4f().translate(6, 1, 1).scale(4, 5, 10);
 
     Matrix4f lightSpaceMatrix;
     VertexArray vaDisplayShadowMap = new VertexArray();
@@ -84,6 +84,8 @@ public class Example3d extends GameBase {
     Matrix4f displayShadowMatrixTrans = new Matrix4f();
 
     Matrix4f pointShadowProjection;
+    VertexArray vaDisplayPointShadowMap = new VertexArray();
+    ShaderProgram displayPointShadowMapShader = new ShaderProgram();
     ShaderProgram pointShadowMapShader = new ShaderProgram();
     List<CubeMap> pointShadowTextures = Arrays.asList(new CubeMap(), new CubeMap());
     List<FrameBuffer> pointShadowMaps = Arrays.asList(new FrameBuffer(false), new FrameBuffer(false));
@@ -230,21 +232,22 @@ public class Example3d extends GameBase {
 
         VertexArrayBuffer vbShadowMap = new VertexArrayBuffer();
         displayShadowMapShader.autoInitializeShadersMulti("shaders/3d_shadow_display_map.glsl");
+        displayShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.75f, .75f, 0).scale(.25f));
         vaDisplayShadowMap.genId();
         vbShadowMap.genId();
         vaDisplayShadowMap.fastSetup(new int[]{2}, vbShadowMap);
         rectData.clear();
         rectData.pushPolygon(Shape2d.createRect(new Vector2f(0), new Vector2f(1)));
         vbShadowMap.bufferData(rectData);
-        displayShadowMatrixTrans.translate(.5f, .5f, 0).scale(.5f);
 
         modelShader.autoInitializeShadersMulti("shaders/3d_model.glsl");
         modelShader.uniformMatrix4f("lightSpaceMatrix", lightSpaceMatrix);
         modelShader.uniform1f("flashLightStrength", 1);
+        modelShader.uniform1f("farPlane", camera.far);
         camera.bindShaderToUniformBlock(modelShader);
 
         modelFloor.loadModel("res/models/crate/NEWCRATE.fbx", true);
-        modelFloor.modelTransform.translate(0, -6, 1).scale(10);
+        modelFloor.modelTransform.translate(0, -6, 1).scale(10, 10, 10);
 
         model.loadModel("res/models/roblox/scene.gltf", true);
         model.modelTransform.translate(-2, -1f, 1).rotateY(1);
@@ -270,6 +273,16 @@ public class Example3d extends GameBase {
         skyLight.uniformValues("skyLight", modelShader);  // never changes
 
         spotLight.setColourValues(new Vector3f(1), new Vector3f(.6f), new Vector3f());
+
+        displayPointShadowMapShader.autoInitializeShadersMulti("shaders/3d_point_shadow_display_map.glsl");
+        camera.bindShaderToUniformBlock(displayPointShadowMapShader);
+        VertexArrayBuffer vbPointShadowMap = new VertexArrayBuffer();
+        vaDisplayPointShadowMap.genId();
+        vbPointShadowMap.genId();
+        vaDisplayPointShadowMap.fastSetup(new int[]{2}, vbPointShadowMap);
+        rectData.clear();
+        rectData.pushPolygon(Shape2d.createRect(new Vector2f(-1), new Vector2f(2)));
+        vbPointShadowMap.bufferData(rectData);
 
         pointShadowMapShader.autoInitializeShadersMulti("shaders/3d_point_shadow_map.glsl");
         for (int i = 0; i < 2; i++) {
@@ -306,11 +319,12 @@ public class Example3d extends GameBase {
         camera.processKeyInputs(window, dt);
         model.updateAnimation(dt);
         model2.updateAnimation(dt);
+        double t = glfwGetTime() * .4;
 
-        lightRed.position.z = 3 * (float) Math.sin(glfwGetTime());
-        lightRed.position.x = 3 * (float) Math.cos(glfwGetTime());
-        lightBlue.position.y = 3 * (float) Math.sin(glfwGetTime());
-        lightBlue.position.z = 3 * (float) Math.cos(glfwGetTime());
+        lightRed.position.z = 3 * (float) Math.sin(t);
+        lightRed.position.x = 3 * (float) Math.cos(t);
+//        lightBlue.position.y = 1 + 3 * (float) Math.abs(Math.sin(t));
+//        lightBlue.position.z = 3 * (float) Math.cos(t);
         lightGroup.uniformValuesAsArray("lights", modelShader);
         spotLight.position = camera.getPos();
         spotLight.direction = camera.getForward();
@@ -336,29 +350,34 @@ public class Example3d extends GameBase {
         Renderer.clearD();
         Renderer.enableDepthTest();
         Renderer.cullFrontFace();
-        modelFloor.draw(shadowMapShader);
-        modelFloor.draw(shadowMapShader, modelFloorTrans1);
-        modelFloor.draw(shadowMapShader, modelFloorTrans2);
+        modelFloor.draw(shadowMapShader, 0);
+        modelFloor.draw(shadowMapShader, 0, modelFloorTrans1);
+        modelFloor.draw(shadowMapShader, 0, modelFloorTrans2);
         Renderer.cullBackFace();
-        model.draw(shadowMapShader);
-        model2.draw(shadowMapShader);
-        model3.draw(shadowMapShader);
-        model4.draw(shadowMapShader);
+        model.draw(shadowMapShader, 0);
+        model2.draw(shadowMapShader, 0);
+        model3.draw(shadowMapShader, 0);
+        model4.draw(shadowMapShader, 0);
         FrameBuffer.unbind();
 
-        for (FrameBuffer fb : pointShadowMaps) {
+        for (int i = 0; i < 2; i++) {
+            FrameBuffer fb = pointShadowMaps.get(i);
+            PointLight light = (PointLight) lightGroup.lights.get(i);
             fb.bind();
             Renderer.clearD();
             Renderer.enableDepthTest();
             Renderer.cullFrontFace();
-            modelFloor.draw(pointShadowMapShader);
-            modelFloor.draw(pointShadowMapShader, modelFloorTrans1);
-            modelFloor.draw(pointShadowMapShader, modelFloorTrans2);
+            pointShadowMapShader.uniformMatrix4fArray("shadowMatrices", generatePointShadowTransformMatrices(light));
+            pointShadowMapShader.uniform3f("lightPos", light.position);
+            pointShadowMapShader.uniform1f("farPlane", camera.far);
+            modelFloor.draw(pointShadowMapShader, 0);
+            modelFloor.draw(pointShadowMapShader, 0, modelFloorTrans1);
+            modelFloor.draw(pointShadowMapShader, 0, modelFloorTrans2);
             Renderer.cullBackFace();
-            model.draw(pointShadowMapShader);
-            model2.draw(pointShadowMapShader);
-            model3.draw(pointShadowMapShader);
-            model4.draw(pointShadowMapShader);
+            model.draw(pointShadowMapShader, 0);
+            model2.draw(pointShadowMapShader, 0);
+            model3.draw(pointShadowMapShader, 0);
+            model4.draw(pointShadowMapShader, 0);
         }
         FrameBuffer.unbind();
         Renderer.setViewportSize(SCREEN_SIZE.width, SCREEN_SIZE.height);
@@ -393,13 +412,15 @@ public class Example3d extends GameBase {
         // models
         modelShader.uniform3f("viewPos", camera.getPos());
         modelShader.uniformTexture("shadowMap", shadowMap.depthBuffer, 0);
-        modelFloor.draw(modelShader);
-        modelFloor.draw(modelShader, modelFloorTrans1);
-        modelFloor.draw(modelShader, modelFloorTrans2);
-        model.draw(modelShader);
-        model2.draw(modelShader);
-        model3.draw(modelShader);
-        model4.draw(modelShader);
+        modelShader.uniformTexture("pointShadowMaps[0]", pointShadowMaps.getFirst().depthBuffer, 1);
+        modelShader.uniformTexture("pointShadowMaps[1]", pointShadowMaps.get(1).depthBuffer, 2);
+        modelFloor.draw(modelShader, 3);
+        modelFloor.draw(modelShader, 3, modelFloorTrans1);
+        modelFloor.draw(modelShader, 3, modelFloorTrans2);
+        model.draw(modelShader, 3);
+        model2.draw(modelShader, 3);
+        model3.draw(modelShader, 3);
+        model4.draw(modelShader, 3);
 
         // light sources
         shLightSource.bind();
@@ -444,9 +465,17 @@ public class Example3d extends GameBase {
 
         // debug shadow map
         displayShadowMapShader.bind();
-        displayShadowMapShader.uniformMatrix4f("transform", displayShadowMatrixTrans);
         shadowMap.depthBuffer.bind();
         Renderer.drawArrays(GL_TRIANGLE_STRIP, vaDisplayShadowMap, 4);
+
+        displayPointShadowMapShader.bind();
+        displayPointShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.875f, .5f, 0).scale(.125f));
+        pointShadowMaps.getFirst().depthBuffer.bind();
+        Renderer.drawArrays(GL_TRIANGLE_STRIP, vaDisplayPointShadowMap, 4);
+
+        displayPointShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.875f, .25f, 0).scale(.125f));
+        pointShadowMaps.get(1).depthBuffer.bind();
+        Renderer.drawArrays(GL_TRIANGLE_STRIP, vaDisplayPointShadowMap, 4);
 
         Renderer.finish(window);
     }
