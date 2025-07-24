@@ -96,6 +96,12 @@ struct SpotLight {
     float quadratic;
 };
 
+struct BlinnPhong {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
 vec3 gammaEncode(vec3 col);
 vec3 calcPointLight(PointLight light, vec3 normal, vec3 diffuseTexture);
 vec3 calcDirectionLighting(vec3 normal, vec3 diffuseTexture);
@@ -109,7 +115,7 @@ const float EXPOSURE = .8;
 const int LIGHT_COUNT = 2;
 const float SHADOW_BIAS = .001;
 const float POINT_SHADOW_BIAS = .05;
-const float SHADOW_MAP_TEXEL_SIZE = 1.0 / (800.0);
+const float SHADOW_MAP_TEXEL_SIZE = 1.0 / (800.0 * 2);
 const vec2 SHADOW_MAP_OFFSETS[9] = vec2[](
     vec2(-SHADOW_MAP_TEXEL_SIZE,  SHADOW_MAP_TEXEL_SIZE), // top-left
     vec2( 0.0f,       SHADOW_MAP_TEXEL_SIZE), // top-center
@@ -166,7 +172,7 @@ void main() {
     colour = vec4(finalCol, 1);
 
     float brightness = dot(colour.rgb, vec3(0.2126, 0.7152, 0.0722));  // relative luminance
-    if (brightness > 1.3) brightColour = vec4(colour.rgb, 1.0);
+    if (brightness > 1.4) brightColour = vec4(colour.rgb, 1.0);
     else brightColour = vec4(0.0, 0.0, 0.0, 1.0);
 }
 
@@ -215,8 +221,8 @@ float calcDirShadow(vec3 normal, vec3 lightDir) {
     return shadow / 9;
 }
 
-float calcPointShadow() {
-    float shadow = 0;
+vec3 calcPointShadow(float attenuation) {
+    vec3 shadow = vec3(0);
     for (int i = 0; i < LIGHT_COUNT; i++) {
         vec3 fragToLight = fs_in.v_fragPos - lights[i].position;
         float closestDepth = texture(pointShadowMaps[i], fragToLight).r * farPlane;
@@ -225,14 +231,14 @@ float calcPointShadow() {
         float addition = 0;
         for (int s = 0; s < 20; s++) {
             float closestDepth = texture(pointShadowMaps[i], fragToLight + POINT_SHADOW_MAP_OFFSETS[s] * .02).r * farPlane;
-            addition += currentDepth - SHADOW_BIAS > closestDepth ? .5 : 0;
+            addition += currentDepth - SHADOW_BIAS > closestDepth ? 1 : 0;
         }
-        shadow += addition / 20;
+        shadow += (lights[i].diffuse * attenuation) * addition / 20;
     }
     return shadow / LIGHT_COUNT;
 }
 
-vec3[3] blinnPhongComponents(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular) {
+BlinnPhong blinnPhongComponents(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular) {
     float diff = max(dot(lightDir, normal), 0);
 
     vec3 halfwayDir = normalize(lightDir + viewDir);
@@ -241,17 +247,17 @@ vec3[3] blinnPhongComponents(vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diff
     vec3 ambient = lightAmbient * diffuseTexture;
     vec3 diffuse = lightDiffuse * (diff * diffuseTexture);
     vec3 specular = lightSpecular * (spec * material.specular);
-    return vec3[3] (ambient, diffuse, specular);
+    return BlinnPhong(ambient, diffuse, specular);
 }
 
 vec3 calcLightingShadow(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular) {
-    vec3 components[3] = blinnPhongComponents(viewDir, lightDir, normal, diffuseTexture, lightAmbient, lightDiffuse, lightSpecular);
+    BlinnPhong bp = blinnPhongComponents(viewDir, lightDir, normal, diffuseTexture, lightAmbient, lightDiffuse, lightSpecular);
     float directionShadow = 1 - calcDirShadow(normal, lightDir);
-    float pointShadow = 1 - calcPointShadow();
-    return vec3(components[0] * attenuation + (pointShadow * directionShadow) * (components[1] * attenuation + components[2] * attenuation));
+    vec3 pointShadow = 1 - calcPointShadow(attenuation);
+    return vec3(bp.ambient * attenuation + (pointShadow * directionShadow) * (bp.diffuse * attenuation + bp.specular * attenuation));
 }
 
 vec3 calcLighting(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, vec3 lightAmbient, vec3 lightDiffuse, vec3 lightSpecular) {
-    vec3 components[3] = blinnPhongComponents(viewDir, lightDir, normal, diffuseTexture, lightAmbient, lightDiffuse, lightSpecular);
-    return vec3(components[0] * attenuation + components[1] * attenuation + components[2] * attenuation);
+    BlinnPhong bp = blinnPhongComponents(viewDir, lightDir, normal, diffuseTexture, lightAmbient, lightDiffuse, lightSpecular);
+    return vec3(bp.ambient * attenuation + bp.diffuse * attenuation + bp.specular * attenuation);
 }

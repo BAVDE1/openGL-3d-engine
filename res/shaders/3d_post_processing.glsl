@@ -15,6 +15,7 @@ void main() {
 
 uniform sampler2D screenTexture;
 uniform sampler2D bloomTexture;
+uniform int bloomOnly;
 
 in vec2 v_texPos;
 
@@ -23,5 +24,5 @@ out vec4 colour;
 void main() {
     vec4 screen = texture(screenTexture, v_texPos);
     vec4 bloom = texture(bloomTexture, v_texPos);
-    colour = screen + bloom;
+    colour = screen * (1-bloomOnly) + bloom;
 }

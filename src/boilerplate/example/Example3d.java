@@ -145,6 +145,8 @@ public class Example3d extends GameBase {
                 }
                 if (key == GLFW_KEY_G) modelShader.uniform1f("flashLightStrength", 1);
                 if (key == GLFW_KEY_H) modelShader.uniform1f("flashLightStrength", 0);
+                if (key == GLFW_KEY_O) shPost.uniform1i("bloomOnly", 0);
+                if (key == GLFW_KEY_P) shPost.uniform1i("bloomOnly", 1);
             }
         });
 
@@ -186,6 +188,7 @@ public class Example3d extends GameBase {
         vbCube.bufferData(cubeData);
 
         shPost.autoInitializeShadersMulti("shaders/3d_post_processing.glsl");
+        shPost.uniform1i("bloomOnly", 0);
         vaPost.genId();
         vbPost.genId();
 
@@ -242,7 +245,7 @@ public class Example3d extends GameBase {
 
         modelShader.autoInitializeShadersMulti("shaders/3d_model.glsl");
         modelShader.uniformMatrix4f("lightSpaceMatrix", lightSpaceMatrix);
-        modelShader.uniform1f("flashLightStrength", 1);
+        modelShader.uniform1f("flashLightStrength", 0);
         modelShader.uniform1f("farPlane", camera.far);
         camera.bindShaderToUniformBlock(modelShader);
 
@@ -267,7 +270,7 @@ public class Example3d extends GameBase {
         lightBlue.setColourValues(new Vector3f(0, 0, 2), new Vector3f(0, 0, .8f), new Vector3f());
         lightGroup.addLight(lightRed, lightBlue);
 
-        skyLight.diffuse = new Vector3f(.4f);
+        skyLight.diffuse = new Vector3f(.6f);
         skyLight.specular = new Vector3f(.2f);
         skyLight.ambient = new Vector3f(.3f);
         skyLight.uniformValues("skyLight", modelShader);  // never changes
@@ -323,6 +326,8 @@ public class Example3d extends GameBase {
 
         lightRed.position.z = 3 * (float) Math.sin(t);
         lightRed.position.x = 3 * (float) Math.cos(t);
+        lightBlue.position.z = (float) Math.cos(t);
+        lightBlue.position.x = (float) Math.sin(t);
 //        lightBlue.position.y = 1 + 3 * (float) Math.abs(Math.sin(t));
 //        lightBlue.position.z = 3 * (float) Math.cos(t);
         lightGroup.uniformValuesAsArray("lights", modelShader);
