@@ -18,7 +18,7 @@ public class TimeStepper {
         double lastFrame = System.nanoTime();
 
         game.createCapabilitiesAndOpen();
-        Logging.debug("Starting static time stepper with a dt of %s", staticDeltaTime);
+        Logging.debug("Starting static time stepper with a dt of %.6f secs (%4fms)", staticDeltaTime, MathUtils.secondToMillis(staticDeltaTime));
 
         while (!game.shouldClose()) {
             double t = System.nanoTime();

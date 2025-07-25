@@ -335,7 +335,7 @@ public class Example3d extends GameBase {
     }
 
     public void render() {
-        GPUProfiler.dumpAllLogs();
+        GPUProfiler.dumpAllLogs(true);
         GPUProfiler.startFrame();
         float time = (float) glfwGetTime();
 
@@ -512,6 +512,7 @@ public class Example3d extends GameBase {
 
     @Override
     public void close() {
+        GPUProfiler.dumpAllAverages();
         window.close();
     }
 }

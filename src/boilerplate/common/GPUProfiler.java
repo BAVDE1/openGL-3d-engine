@@ -62,21 +62,36 @@ public class GPUProfiler {
         for (Frame frame : frames.values()) {
             if (GL45.glGetQueryObjectui(frame.endQuery, GL45.GL_QUERY_RESULT_AVAILABLE) != GL45.GL_TRUE) continue;
             framesFinished.add(frame.frameNum);
-            if (silent) continue;
-
-            Logging.mystical(">>> Frame %s", frame.frameNum);
+            if (!silent) Logging.mystical(">>> Frame %s", frame.frameNum);
 
             double total = 0;
             for (Log log : frame.logs) {
                 log.msTime = getTimeFromQueries(log.startQuery, log.endQuery);
                 String space = whitespace.substring(log.name.length());
-                Logging.info("%s:%s %.2fms (avg: %.2f)", log.name, space, log.msTime, calcLogAverage(log));
+                double avg = calcLogAverage(log);  // still need to call this even if silent
+                if (!silent) Logging.info("%s:%s %.2fms (avg: %.2f)", log.name, space, log.msTime, avg);
                 total += log.msTime;
             }
-            Logging.debug("total: %.3f", total);
-            Logging.mystical("End logs");
+
+            if (!silent) {
+                Logging.debug("total: %.3f", total);
+                Logging.mystical("End logs");
+            }
         }
         for (int key : framesFinished) frames.remove(key);
+    }
+
+    public static void dumpAllAverages() {
+        Logging.mystical(">>> All Averages (from last %s frames)", AVERAGE_HISTORY);
+        double total = 0;
+        for (String logName : logAverages.keySet()) {
+            String space = whitespace.substring(logName.length());
+            double avg = Arrays.stream(logAverages.get(logName)).sum() / AVERAGE_HISTORY;
+            total += avg;
+            Logging.info("%s:%s %.5fms", logName, space, avg);
+        }
+        Logging.debug("avg total: %.3f", total);
+        Logging.mystical("End averages");
     }
 
     public static void startLog(String logName) {
