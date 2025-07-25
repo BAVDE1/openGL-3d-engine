@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import static org.lwjgl.glfw.GLFW.glfwGetTime;
+
 public class GPUProfiler {
     private static class Frame {
         public int endQuery;
@@ -24,6 +26,12 @@ public class GPUProfiler {
     private static final int AVERAGE_HISTORY = 50;
 
     private static int frameCount = 0;
+
+    // fps tracking
+    private static int frameCountStart = 0;
+    private static double fpsCountStartTime = -1;
+    private static int fpsCount = 0;
+
     private static Frame currentFrame;
     private static Log currentLog;
 
@@ -31,13 +39,6 @@ public class GPUProfiler {
     private static final HashMap<String, double[]> logAverages = new HashMap<>();
 
     private static String whitespace = "";
-
-    public static void startFrame() {
-        frameCount += 1;
-        currentLog = null;
-        currentFrame = new Frame();
-        currentFrame.frameNum = frameCount;
-    }
 
     private static double calcLogAverage(Log log) {
         if (!logAverages.containsKey(log.name)) logAverages.put(log.name, new double[AVERAGE_HISTORY]);
@@ -51,6 +52,15 @@ public class GPUProfiler {
         long endTime = GL45.glGetQueryObjectui64(endQuery, GL45.GL_QUERY_RESULT);
         double time = endTime - startTime;
         return time < 1000 ? 0 : time / 1e6;  // 1000 nanoseconds is too fast, nothing probably happened
+    }
+
+    private static void updateFPSCount() {
+        if (fpsCountStartTime == -1) fpsCountStartTime = glfwGetTime();
+        else if (glfwGetTime() - fpsCountStartTime >= 1) {
+            fpsCount = frameCount - frameCountStart;
+            frameCountStart = frameCount;
+            fpsCountStartTime = -1;
+        }
     }
 
     public static void dumpAllLogs() {
@@ -92,6 +102,22 @@ public class GPUProfiler {
         }
         Logging.debug("avg total: %.3f", total);
         Logging.mystical("End averages");
+    }
+
+    public static void dumpFps() {
+        Logging.mystical(">>> FPS for the last full second of runtime: %s", fpsCount);
+    }
+
+    public static int getFps() {
+        return fpsCount;
+    }
+
+    public static void startFrame() {
+        frameCount += 1;
+        currentLog = null;
+        currentFrame = new Frame();
+        currentFrame.frameNum = frameCount;
+        updateFPSCount();
     }
 
     public static void startLog(String logName) {

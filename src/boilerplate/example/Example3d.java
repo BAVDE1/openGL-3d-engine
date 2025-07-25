@@ -512,6 +512,7 @@ public class Example3d extends GameBase {
 
     @Override
     public void close() {
+        GPUProfiler.dumpFps();
         GPUProfiler.dumpAllAverages();
         window.close();
     }
