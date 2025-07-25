@@ -8,11 +8,9 @@ import java.util.HashMap;
 
 public class GPUProfiler {
     private static class Frame {
-        public int startQuery = -1;
         public int endQuery = -1;
 
         public int frameNum;
-        public double msTime = -1;
         public final ArrayList<Log> logs = new ArrayList<>();
     }
 
@@ -32,7 +30,6 @@ public class GPUProfiler {
 
     private static final HashMap<Integer, Frame> frames = new HashMap<>();
     private static final HashMap<String, double[]> logAverages = new HashMap<>();
-    private static final double[] frameAverage = new double[AVERAGE_HISTORY];
 
     private static String whitespace = "";
 
@@ -41,16 +38,6 @@ public class GPUProfiler {
         currentLog = null;
         currentFrame = new Frame();
         currentFrame.frameNum = frameCount;
-
-        currentFrame.startQuery = GL45.glGenQueries();
-        GL45.glQueryCounter(currentFrame.startQuery, GL45.GL_TIMESTAMP);
-    }
-
-    private static double calcFrameAverage(Frame frame) {
-        frameAverage[frameCount % AVERAGE_HISTORY] = frame.msTime;
-        double average = 0;
-        for (double n : frameAverage) average += n;
-        return average / AVERAGE_HISTORY;
     }
 
     private static double calcLogAverage(Log log) {
@@ -73,15 +60,16 @@ public class GPUProfiler {
         ArrayList<Integer> framesFinished = new ArrayList<>();
         for (Frame frame : frames.values()) {
             if (GL45.glGetQueryObjectui(frame.endQuery, GL45.GL_QUERY_RESULT_AVAILABLE) != GL45.GL_TRUE) continue;
+            Logging.mystical(">>> Frame %s", frame.frameNum);
 
-            frame.msTime = getTimeFromQueries(frame.startQuery, frame.endQuery);
-            Logging.mystical(">>> Frame %s (%.2fms, avg: %.2f)", frame.frameNum, frame.msTime, calcFrameAverage(frame));
-
+            double total = 0;
             for (Log log : frame.logs) {
                 log.msTime = getTimeFromQueries(log.startQuery, log.endQuery);
                 String space = whitespace.substring(log.name.length());
                 Logging.info("%s:%s %.2fms (avg: %.2f)", log.name, space, log.msTime, calcLogAverage(log));
+                total += log.msTime;
             }
+            Logging.debug("total: %.3f", total);
             Logging.mystical("End logs");
             framesFinished.add(frame.frameNum);
         }

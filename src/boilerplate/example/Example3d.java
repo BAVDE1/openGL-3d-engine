@@ -89,7 +89,7 @@ public class Example3d extends GameBase {
 
     @Override
     public void start() {
-        TimeStepper.startSleepingTimeStepper(BoilerplateConstants.DT, this);
+        TimeStepper.startStaticTimeStepper(BoilerplateConstants.DT, this);
     }
 
     @Override
