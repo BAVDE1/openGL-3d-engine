@@ -4,12 +4,12 @@ import boilerplate.utility.Logging;
 import org.lwjgl.opengl.GL45;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class GPUProfiler {
     private static class Frame {
-        public int endQuery = -1;
-
+        public int endQuery;
         public int frameNum;
         public final ArrayList<Log> logs = new ArrayList<>();
     }
@@ -17,9 +17,8 @@ public class GPUProfiler {
     private static class Log {
         public int startQuery;
         public int endQuery;
-
+        public double msTime;
         public String name;
-        public double msTime = -1;
     }
 
     private static final int AVERAGE_HISTORY = 50;
@@ -44,9 +43,7 @@ public class GPUProfiler {
         if (!logAverages.containsKey(log.name)) logAverages.put(log.name, new double[AVERAGE_HISTORY]);
         double[] logAverages = GPUProfiler.logAverages.get(log.name);
         logAverages[frameCount % AVERAGE_HISTORY] = log.msTime;
-        double average = 0;
-        for (double n : logAverages) average += n;
-        return average / AVERAGE_HISTORY;
+        return Arrays.stream(logAverages).sum() / AVERAGE_HISTORY;
     }
 
     private static double getTimeFromQueries(int startQuery, int endQuery) {
@@ -57,9 +54,16 @@ public class GPUProfiler {
     }
 
     public static void dumpAllLogs() {
+        dumpAllLogs(false);
+    }
+
+    public static void dumpAllLogs(boolean silent) {
         ArrayList<Integer> framesFinished = new ArrayList<>();
         for (Frame frame : frames.values()) {
             if (GL45.glGetQueryObjectui(frame.endQuery, GL45.GL_QUERY_RESULT_AVAILABLE) != GL45.GL_TRUE) continue;
+            framesFinished.add(frame.frameNum);
+            if (silent) continue;
+
             Logging.mystical(">>> Frame %s", frame.frameNum);
 
             double total = 0;
@@ -71,34 +75,34 @@ public class GPUProfiler {
             }
             Logging.debug("total: %.3f", total);
             Logging.mystical("End logs");
-            framesFinished.add(frame.frameNum);
         }
         for (int key : framesFinished) frames.remove(key);
     }
 
-    public static void startLog(String name) {
-        GPUProfiler.currentLog = new Log();
-        GPUProfiler.currentLog.name = name;
-        GPUProfiler.currentLog.startQuery = GL45.glGenQueries();
-        GL45.glQueryCounter(GPUProfiler.currentLog.startQuery, GL45.GL_TIMESTAMP);
+    public static void startLog(String logName) {
+        currentLog = new Log();
+        currentLog.name = logName;
+        currentLog.startQuery = GL45.glGenQueries();
+        GL45.glQueryCounter(currentLog.startQuery, GL45.GL_TIMESTAMP);
 
-        if (name.length() > whitespace.length()) {
+        if (logName.length() > whitespace.length()) {
             whitespace = "";
-            for (char _ : name.toCharArray()) whitespace = whitespace.concat(" ");
+            for (char _ : logName.toCharArray()) whitespace = whitespace.concat(" ");
         }
     }
 
     public static void endLog() {
-        GPUProfiler.currentLog.endQuery = GL45.glGenQueries();
-        GL45.glQueryCounter(GPUProfiler.currentLog.endQuery, GL45.GL_TIMESTAMP);
+        currentLog.endQuery = GL45.glGenQueries();
+        GL45.glQueryCounter(currentLog.endQuery, GL45.GL_TIMESTAMP);
 
-        currentFrame.logs.add(GPUProfiler.currentLog);
-        GPUProfiler.currentLog = null;
+        currentFrame.logs.add(currentLog);
+        currentLog = null;
     }
 
     public static void endFrame() {
         currentFrame.endQuery = GL45.glGenQueries();
         GL45.glQueryCounter(currentFrame.endQuery, GL45.GL_TIMESTAMP);
+
         frames.put(currentFrame.frameNum, currentFrame);
         currentFrame = null;
     }
