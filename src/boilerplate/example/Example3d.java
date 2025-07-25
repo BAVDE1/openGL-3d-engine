@@ -1,8 +1,6 @@
 package boilerplate.example;
 
-import boilerplate.common.BoilerplateConstants;
-import boilerplate.common.GameBase;
-import boilerplate.common.TimeStepper;
+import boilerplate.common.*;
 import boilerplate.common.Window;
 import boilerplate.models.Model;
 import boilerplate.rendering.Camera3d;
@@ -20,7 +18,6 @@ import boilerplate.rendering.light.SpotLight;
 import boilerplate.rendering.textures.CubeMap;
 import boilerplate.rendering.textures.Texture;
 import boilerplate.utility.Logging;
-import boilerplate.utility.MathUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -92,7 +89,7 @@ public class Example3d extends GameBase {
 
     @Override
     public void start() {
-        TimeStepper.startStaticTimeStepper(BoilerplateConstants.DT, this, false);
+        TimeStepper.startSleepingTimeStepper(BoilerplateConstants.DT, this);
     }
 
     @Override
@@ -338,6 +335,8 @@ public class Example3d extends GameBase {
     }
 
     public void render() {
+        GPUProfiler.dumpAllLogs();
+        GPUProfiler.startFrame();
         float time = (float) glfwGetTime();
 
         Matrix4f matModel1 = new Matrix4f().identity().translate(10, 0, -10);
@@ -348,6 +347,7 @@ public class Example3d extends GameBase {
         matModel2.scale(.8f, .5f, .5f);
 
         // --- SHADOW MAPS --- //
+        GPUProfiler.startLog("shadow maps");
         shadowMap.bind();
         Renderer.setViewportSize(SHADOW_MAP_SIZE.width, SHADOW_MAP_SIZE.height);
         Renderer.clearD();
@@ -379,8 +379,10 @@ public class Example3d extends GameBase {
         }
         FrameBuffer.unbind();
         Renderer.setViewportSize(SCREEN_SIZE.width, SCREEN_SIZE.height);
+        GPUProfiler.endLog();
 
         // --- 3D SPACE --- //
+        GPUProfiler.startLog("3d boxes");
         fb.bind();
         camera.updateUniformBlock();
         Renderer.enableStencilTest();
@@ -406,8 +408,10 @@ public class Example3d extends GameBase {
         shReflect.uniform3f("camPos", camera.getPos());
         shReflect.uniformMatrix4f("model", matModel1.translate(2, 0, 0));
         Renderer.drawArrays(renderWireFrame ? GL_LINES : GL_TRIANGLES, vaCube, 36);
+        GPUProfiler.endLog();
 
         // models
+        GPUProfiler.startLog("models");
         modelShader.uniform3f("viewPos", camera.getPos());
         modelShader.uniformTexture("shadowMap", shadowMap.depthBuffer, 0);
         modelShader.uniformTexture("pointShadowMaps[0]", pointShadowMaps.getFirst().depthBuffer, 1);
@@ -419,8 +423,10 @@ public class Example3d extends GameBase {
         model2.draw(modelShader, 3);
         model3.draw(modelShader, 3);
         model4.draw(modelShader, 3);
+        GPUProfiler.endLog();
 
         // light sources
+        GPUProfiler.startLog("light sources");
         shLightSource.bind();
         shLightSource.uniformMatrix4f("model", new Matrix4f().translate(lightRed.position).scale(.3f));
         shLightSource.uniform3f("lightColour", lightRed.diffuse);
@@ -428,12 +434,14 @@ public class Example3d extends GameBase {
         shLightSource.uniformMatrix4f("model", new Matrix4f().translate(lightBlue.position).scale(.3f));
         shLightSource.uniform3f("lightColour", lightBlue.diffuse);
         Renderer.drawArrays(GL_TRIANGLES, vaCube, 36);
+        GPUProfiler.endLog();
 
         skyBox.draw();
         fb.blitIntoIntermediaryFB(GL_COLOR_BUFFER_BIT, GL_NEAREST, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT0);
         fb.blitIntoIntermediaryFB(GL_COLOR_BUFFER_BIT, GL_NEAREST, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT1);
 
         // gaussian blur for bloom
+        GPUProfiler.startLog("gaussian blur");
         FrameBuffer.unbind();
         Renderer.clearC();
         boolean firstIter = true;
@@ -449,8 +457,10 @@ public class Example3d extends GameBase {
             } else pingPongFbs[1 - inx].colourBuffers.getFirst().bind();
             Renderer.drawArrays(GL_TRIANGLE_STRIP, vaPost, 4);
         }
+        GPUProfiler.endLog();
 
         // --- POST PROCESSING --- //
+        GPUProfiler.startLog("post processing");
         FrameBuffer.unbind();
         Renderer.clearC();
         Renderer.disableDepthTest();
@@ -460,6 +470,7 @@ public class Example3d extends GameBase {
         shPost.uniformTexture("bloomTexture", pingPongFbs[1 - (gaussianAmount % 2)].colourBuffers.getFirst(), 1);
         Renderer.drawArrays(GL_TRIANGLE_STRIP, vaPost, 4);
         GL45.glActiveTexture(GL45.GL_TEXTURE0);
+        GPUProfiler.endLog();
 
         // debug shadow map
         displayShadowMapShader.bind();
@@ -476,6 +487,7 @@ public class Example3d extends GameBase {
         Renderer.drawArrays(GL_TRIANGLE_STRIP, vaDisplayPointShadowMap, 4);
 
         Renderer.finish(window);
+        GPUProfiler.endFrame();
     }
 
     private void drawObjects(Matrix4f model1, Matrix4f model2, ShaderProgram sh) {

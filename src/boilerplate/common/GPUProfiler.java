@@ -1,0 +1,117 @@
+package boilerplate.common;
+
+import boilerplate.utility.Logging;
+import org.lwjgl.opengl.GL45;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+public class GPUProfiler {
+    private static class Frame {
+        public int startQuery = -1;
+        public int endQuery = -1;
+
+        public int frameNum;
+        public double msTime = -1;
+        public final ArrayList<Log> logs = new ArrayList<>();
+    }
+
+    private static class Log {
+        public int startQuery;
+        public int endQuery;
+
+        public String name;
+        public double msTime = -1;
+    }
+
+    private static final int AVERAGE_HISTORY = 50;
+
+    private static int frameCount = 0;
+    private static Frame currentFrame;
+    private static Log currentLog;
+
+    private static final HashMap<Integer, Frame> frames = new HashMap<>();
+    private static final HashMap<String, double[]> logAverages = new HashMap<>();
+    private static final double[] frameAverage = new double[AVERAGE_HISTORY];
+
+    private static String whitespace = "";
+
+    public static void startFrame() {
+        frameCount += 1;
+        currentLog = null;
+        currentFrame = new Frame();
+        currentFrame.frameNum = frameCount;
+
+        currentFrame.startQuery = GL45.glGenQueries();
+        GL45.glQueryCounter(currentFrame.startQuery, GL45.GL_TIMESTAMP);
+    }
+
+    private static double calcFrameAverage(Frame frame) {
+        frameAverage[frameCount % AVERAGE_HISTORY] = frame.msTime;
+        double average = 0;
+        for (double n : frameAverage) average += n;
+        return average / AVERAGE_HISTORY;
+    }
+
+    private static double calcLogAverage(Log log) {
+        if (!logAverages.containsKey(log.name)) logAverages.put(log.name, new double[AVERAGE_HISTORY]);
+        double[] logAverages = GPUProfiler.logAverages.get(log.name);
+        logAverages[frameCount % AVERAGE_HISTORY] = log.msTime;
+        double average = 0;
+        for (double n : logAverages) average += n;
+        return average / AVERAGE_HISTORY;
+    }
+
+    private static double getTimeFromQueries(int startQuery, int endQuery) {
+        long startTime = GL45.glGetQueryObjectui64(startQuery, GL45.GL_QUERY_RESULT);
+        long endTime = GL45.glGetQueryObjectui64(endQuery, GL45.GL_QUERY_RESULT);
+        double time = endTime - startTime;
+        return time < 1000 ? 0 : time / 1e6;  // 1000 nanoseconds is too fast, nothing probably happened
+    }
+
+    public static void dumpAllLogs() {
+        ArrayList<Integer> framesFinished = new ArrayList<>();
+        for (Frame frame : frames.values()) {
+            if (GL45.glGetQueryObjectui(frame.endQuery, GL45.GL_QUERY_RESULT_AVAILABLE) != GL45.GL_TRUE) continue;
+
+            frame.msTime = getTimeFromQueries(frame.startQuery, frame.endQuery);
+            Logging.mystical(">>> Frame %s (%.2fms, avg: %.2f)", frame.frameNum, frame.msTime, calcFrameAverage(frame));
+
+            for (Log log : frame.logs) {
+                log.msTime = getTimeFromQueries(log.startQuery, log.endQuery);
+                String space = whitespace.substring(log.name.length());
+                Logging.info("%s:%s %.2fms (avg: %.2f)", log.name, space, log.msTime, calcLogAverage(log));
+            }
+            Logging.mystical("End logs");
+            framesFinished.add(frame.frameNum);
+        }
+        for (int key : framesFinished) frames.remove(key);
+    }
+
+    public static void startLog(String name) {
+        GPUProfiler.currentLog = new Log();
+        GPUProfiler.currentLog.name = name;
+        GPUProfiler.currentLog.startQuery = GL45.glGenQueries();
+        GL45.glQueryCounter(GPUProfiler.currentLog.startQuery, GL45.GL_TIMESTAMP);
+
+        if (name.length() > whitespace.length()) {
+            whitespace = "";
+            for (char _ : name.toCharArray()) whitespace = whitespace.concat(" ");
+        }
+    }
+
+    public static void endLog() {
+        GPUProfiler.currentLog.endQuery = GL45.glGenQueries();
+        GL45.glQueryCounter(GPUProfiler.currentLog.endQuery, GL45.GL_TIMESTAMP);
+
+        currentFrame.logs.add(GPUProfiler.currentLog);
+        GPUProfiler.currentLog = null;
+    }
+
+    public static void endFrame() {
+        currentFrame.endQuery = GL45.glGenQueries();
+        GL45.glQueryCounter(currentFrame.endQuery, GL45.GL_TIMESTAMP);
+        frames.put(currentFrame.frameNum, currentFrame);
+        currentFrame = null;
+    }
+}
