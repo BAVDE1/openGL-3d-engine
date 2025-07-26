@@ -335,7 +335,7 @@ public class Example3d extends GameBase {
     }
 
     public void render() {
-        GPUProfiler.dumpAllLogs(true);
+        GPUProfiler.dumpAllLogs(false);
         GPUProfiler.startFrame();
         float time = (float) glfwGetTime();
 
@@ -348,37 +348,43 @@ public class Example3d extends GameBase {
 
         // --- SHADOW MAPS --- //
         GPUProfiler.startLog("shadow maps");
-        shadowMap.bind();
-        Renderer.setViewportSize(SHADOW_MAP_SIZE.width, SHADOW_MAP_SIZE.height);
-        Renderer.clearD();
-        Renderer.enableDepthTest();
-        Renderer.cullFrontFace();
-        modelFloor.draw(shadowMapShader, 0);
-        modelFloor.draw(shadowMapShader, 0, modelFloorTrans1);
-        modelFloor.draw(shadowMapShader, 0, modelFloorTrans2);
-        Renderer.cullBackFace();
-        model.draw(shadowMapShader, 0);
-        model2.draw(shadowMapShader, 0);
-        model3.draw(shadowMapShader, 0);
-        model4.draw(shadowMapShader, 0);
-        FrameBuffer.unbind();
-
-        for (int i = 0; i < 2; i++) {
-            FrameBuffer fb = pointShadowMaps.get(i);
-            PointLight light = (PointLight) lightGroup.lights.get(i);
-            fb.bind();
+        {
+            GPUProfiler.startLog("direction map");
+            shadowMap.bind();
+            Renderer.setViewportSize(SHADOW_MAP_SIZE.width, SHADOW_MAP_SIZE.height);
             Renderer.clearD();
             Renderer.enableDepthTest();
-            pointShadowMapShader.uniformMatrix4fArray("shadowMatrices", generatePointShadowTransformMatrices(light));
-            pointShadowMapShader.uniform3f("lightPos", light.position);
-            pointShadowMapShader.uniform1f("farPlane", camera.far);
-            model.draw(pointShadowMapShader, 0);
-            model2.draw(pointShadowMapShader, 0);
-            model3.draw(pointShadowMapShader, 0);
-            model4.draw(pointShadowMapShader, 0);
+            Renderer.cullFrontFace();
+            modelFloor.draw(shadowMapShader, 0);
+            modelFloor.draw(shadowMapShader, 0, modelFloorTrans1);
+            modelFloor.draw(shadowMapShader, 0, modelFloorTrans2);
+            Renderer.cullBackFace();
+            model.draw(shadowMapShader, 0);
+            model2.draw(shadowMapShader, 0);
+            model3.draw(shadowMapShader, 0);
+            model4.draw(shadowMapShader, 0);
+            FrameBuffer.unbind();
+            GPUProfiler.endLog();
+
+            GPUProfiler.startLog("point maps");
+            for (int i = 0; i < 2; i++) {
+                FrameBuffer fb = pointShadowMaps.get(i);
+                PointLight light = (PointLight) lightGroup.lights.get(i);
+                fb.bind();
+                Renderer.clearD();
+                Renderer.enableDepthTest();
+                pointShadowMapShader.uniformMatrix4fArray("shadowMatrices", generatePointShadowTransformMatrices(light));
+                pointShadowMapShader.uniform3f("lightPos", light.position);
+                pointShadowMapShader.uniform1f("farPlane", camera.far);
+                model.draw(pointShadowMapShader, 0);
+                model2.draw(pointShadowMapShader, 0);
+                model3.draw(pointShadowMapShader, 0);
+                model4.draw(pointShadowMapShader, 0);
+            }
+            FrameBuffer.unbind();
+            Renderer.setViewportSize(SCREEN_SIZE.width, SCREEN_SIZE.height);
+            GPUProfiler.endLog();
         }
-        FrameBuffer.unbind();
-        Renderer.setViewportSize(SCREEN_SIZE.width, SCREEN_SIZE.height);
         GPUProfiler.endLog();
 
         // --- 3D SPACE --- //
