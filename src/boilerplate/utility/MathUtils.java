@@ -29,6 +29,10 @@ public class MathUtils {
         return seconds / 1E-3f;
     }
 
+    public static double secondToNano(double seconds) {
+        return seconds / 1E-9f;
+    }
+
     public static float roundToPlace(float num, int place) {
         return (float) Math.round(num * place) / place;
     }

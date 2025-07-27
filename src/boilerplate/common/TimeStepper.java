@@ -13,28 +13,31 @@ public class TimeStepper {
     }
 
     public static void startStaticTimeStepper(double staticDeltaTime, GameBase game, Boolean tryOptimise) {
-        final double halfDt = staticDeltaTime * 0.5;  // in seconds
+        final double staticDeltaTimeN = MathUtils.secondToNano(staticDeltaTime);
+        final double halfDtN = staticDeltaTimeN * 0.5;
+        final double minFPS = MathUtils.secondToNano(1);  // min of 1 fps
         double accumulator = 0;
-        double lastFrame = System.nanoTime();
 
         game.createCapabilitiesAndOpen();
         Logging.debug("Starting static time stepper with a dt of %.6f secs (%4fms)", staticDeltaTime, MathUtils.secondToMillis(staticDeltaTime));
 
+        double lastFrame = System.nanoTime();
+
         while (!game.shouldClose()) {
             double t = System.nanoTime();
-            accumulator += MathUtils.nanoToSecond(t - lastFrame);
-            accumulator = Math.min(1, accumulator);  // min of 1 fps
+            accumulator += t - lastFrame;
+            accumulator = Math.min(minFPS, accumulator);
             lastFrame = t;
 
-            while (accumulator >= staticDeltaTime) {
-                accumulator -= staticDeltaTime;
+            while (accumulator >= staticDeltaTimeN) {
+                accumulator -= staticDeltaTimeN;
 
                 try {
                     double tStart = System.nanoTime();
                     game.mainLoop(staticDeltaTime);
-                    double loopTime = MathUtils.nanoToSecond(System.nanoTime() - tStart);
-                    if (tryOptimise && accumulator + loopTime < halfDt) {  // only sleep if there is enough time
-                        Thread.sleep((long) Math.floor(halfDt * 1_000));  // give it a little break *-*
+                    double loopTime = System.nanoTime() - tStart;
+                    if (tryOptimise && accumulator + loopTime < halfDtN) {  // only sleep if there is enough time
+                        Thread.sleep((long) Math.floor(MathUtils.nanoToSecond(halfDtN)));  // give it a little break *-*
                     }
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Program closed while thread was asleep (between frames)");
