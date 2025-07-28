@@ -20,6 +20,7 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL45;
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.processing.SupportedSourceVersion;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -33,15 +34,18 @@ public class Model {
     private static final int VERTEX_WEIGHT_NULL = 0;
 
     public interface ProcessVertexFunc {
-        default void call(Model model, Mesh mesh, int vertexInx, AIVector3D.Buffer allVertices, AIVector3D.Buffer allNormals, AIVector3D.Buffer allTexPos) {
+        default void call(Model model, Mesh mesh, int vertexInx, AIVector3D.Buffer allVertices, AIVector3D.Buffer allNormals, AIVector3D.Buffer allTexPos, AIVector3D.Buffer allTangents, AIVector3D.Buffer allBitangents) {
             for (VertexLayout.Element element : model.vertexLayout.elements) {
                 switch (element.hint) {
                     case (VertexLayout.HINT_POSITION) -> mesh.pushVector3D(allVertices.get(vertexInx));
                     case (VertexLayout.HINT_NORMAL) -> mesh.pushVector3D(allNormals.get(vertexInx));
+                    case (VertexLayout.HINT_TANGENT) -> mesh.pushVector3D(allTangents.get(vertexInx));
+                    case (VertexLayout.HINT_BITANGENT) -> mesh.pushVector3D(allBitangents.get(vertexInx));
                     case (VertexLayout.HINT_TEX_POS) -> mesh.pushVector2D(allTexPos.get(vertexInx));
                     case (VertexLayout.HINT_BONE_IDS) -> model.pushVertexBoneIds(mesh, vertexInx);
                     case (VertexLayout.HINT_BONE_WEIGHTS) -> model.pushVertexBoneWeights(mesh, vertexInx);
-                    case (VertexLayout.HINT_CUSTOM_0) -> mesh.pushInt(model.hasBones ? 0 : 1);  // it is static if no bones
+                    case (VertexLayout.HINT_CUSTOM_0) ->
+                            mesh.pushInt(model.hasBones ? 0 : 1);  // it is static if no bones
                     default -> throw new RuntimeException("Element from given VertexLayout is missing a hint value.");
                 }
             }
@@ -239,6 +243,8 @@ public class Model {
         AIVector3D.Buffer allVertices = aiMesh.mVertices();
         AIVector3D.Buffer allNormals = aiMesh.mNormals();
         AIVector3D.Buffer allTexPos = aiMesh.mTextureCoords(0);
+        AIVector3D.Buffer allTangents = aiMesh.mTangents();
+        AIVector3D.Buffer allBitangents = aiMesh.mTangents();
 
         // data checks
         if (allNormals == null && vertexLayout.hasElementWithHint(VertexLayout.HINT_NORMAL))
@@ -248,7 +254,7 @@ public class Model {
 
         // process
         for (int i = 0; i < aiMesh.mNumVertices(); i++) {
-            processVertexFunc.call(this, mesh, i, allVertices, allNormals, allTexPos);
+            processVertexFunc.call(this, mesh, i, allVertices, allNormals, allTexPos, allTangents, allBitangents);
         }
     }
 
@@ -335,6 +341,7 @@ public class Model {
 
         material.diffuseTexture = getMaterialTexture(aiMaterial, Assimp.aiTextureType_DIFFUSE);
         material.specularMap = getMaterialTexture(aiMaterial, Assimp.aiTextureType_SPECULAR);
+        material.normalMap = getMaterialTexture(aiMaterial, Assimp.aiTextureType_NORMALS);
 
         material.ambient = getMaterialColour(aiMaterial, Assimp.AI_MATKEY_COLOR_AMBIENT);
         material.diffuse = getMaterialColour(aiMaterial, Assimp.AI_MATKEY_COLOR_DIFFUSE);
@@ -348,7 +355,12 @@ public class Model {
         AIString texPath = AIString.calloc();
         Assimp.aiGetMaterialTexture(aiMaterial, type, 0, texPath, (IntBuffer) null, null, null, null, null, null);
         if (texPath.dataString().isEmpty()) return null;
-        return new Texture2d(directory + "/" + texPath.dataString());
+
+        String texturePath = texPath.dataString();
+        if (texturePath.contains("\\")) {  // clean the path
+            texturePath = texturePath.substring(texturePath.lastIndexOf("\\") + 1);
+        }
+        return new Texture2d(directory + "/" + texturePath);
     }
 
     private Vector3f getMaterialColour(AIMaterial aiMaterial, String type) {
@@ -470,10 +482,16 @@ public class Model {
         return directory;
     }
 
+    public Material getMaterial(int index) {
+        return materials[index];
+    }
+
     public static VertexLayout defaultVertexLayout() {
         return new VertexLayout(
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_POSITION),
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_NORMAL),
+                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_TANGENT),
+                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_BITANGENT),
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 2, VertexLayout.HINT_TEX_POS),
                 new VertexLayout.Element(VertexLayout.TYPE_INT, MAX_BONE_INFLUENCE, VertexLayout.HINT_BONE_IDS),
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, MAX_BONE_INFLUENCE, VertexLayout.HINT_BONE_WEIGHTS, true),
@@ -484,8 +502,8 @@ public class Model {
     public static ProcessVertexFunc defaultProcessVertexFunc() {
         return new ProcessVertexFunc() {
             @Override
-            public void call(Model model, Mesh mesh, int vertexInx, AIVector3D.Buffer allVertices, AIVector3D.Buffer allNormals, AIVector3D.Buffer allTexPos) {
-                ProcessVertexFunc.super.call(model, mesh, vertexInx, allVertices, allNormals, allTexPos);
+            public void call(Model model, Mesh mesh, int vertexInx, AIVector3D.Buffer allVertices, AIVector3D.Buffer allNormals, AIVector3D.Buffer allTexPos, AIVector3D.Buffer allTangents, AIVector3D.Buffer allBitangents) {
+                ProcessVertexFunc.super.call(model, mesh, vertexInx, allVertices, allNormals, allTexPos, allTangents, allBitangents);
             }
         };
     }

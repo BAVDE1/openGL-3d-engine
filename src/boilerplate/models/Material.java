@@ -12,6 +12,7 @@ public class Material {
 
     public Texture2d diffuseTexture;
     public Texture2d specularMap;
+    public Texture2d normalMap;
 
     public Material() {
     }
@@ -57,6 +58,7 @@ public class Material {
         int texSlot = textureSlotStart;
         if (diffuseTexture != null) sh.uniformTexture(uniform + ".diffuseTexture", diffuseTexture, texSlot++);
         if (specularMap != null) sh.uniformTexture(uniform + ".specularMap", specularMap, texSlot++);
+        if (normalMap != null) sh.uniformTexture(uniform + ".normalMap", normalMap, texSlot++);
     }
 
     @Override

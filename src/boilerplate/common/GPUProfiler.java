@@ -34,7 +34,7 @@ public class GPUProfiler {
         int depth = 0;
     }
 
-    private static final int AVERAGE_HISTORY = 50;
+    public static int AVERAGE_HISTORY = 50;
 
     private static int frameCount = 0;
 

@@ -72,9 +72,11 @@ public class VertexLayout {
     public static final int HINT_NULL = 0;
     public static final int HINT_POSITION = 1;
     public static final int HINT_NORMAL = 2;
-    public static final int HINT_TEX_POS = 3;
-    public static final int HINT_BONE_IDS = 4;
-    public static final int HINT_BONE_WEIGHTS = 5;
+    public static final int HINT_TANGENT = 3;
+    public static final int HINT_BITANGENT = 4;
+    public static final int HINT_TEX_POS = 5;
+    public static final int HINT_BONE_IDS = 6;
+    public static final int HINT_BONE_WEIGHTS = 7;
     public static final int HINT_CUSTOM_0 = 100;
     public static final int HINT_CUSTOM_1 = 101;
     public static final int HINT_CUSTOM_2 = 102;
@@ -120,6 +122,8 @@ public class VertexLayout {
         m.put(HINT_NULL, "no hint");
         m.put(HINT_POSITION, "position");
         m.put(HINT_NORMAL, "normal");
+        m.put(HINT_TANGENT, "tangent");
+        m.put(HINT_BITANGENT, "bitangent");
         m.put(HINT_TEX_POS, "tex_pos");
         m.put(HINT_BONE_IDS, "bone_ids");
         m.put(HINT_BONE_WEIGHTS, "bone_weights");

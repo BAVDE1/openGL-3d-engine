@@ -21,16 +21,24 @@ public class MathUtils {
         return nanoSecs * 1E-9f;
     }
 
+    public static double secondToNano(double seconds) {
+        return seconds * 1E+9f;
+    }
+
     public static double millisToSecond(double milliseconds) {
         return milliseconds * 1E-3f;
     }
 
     public static double secondToMillis(double seconds) {
-        return seconds / 1E-3f;
+        return seconds * 1E+3f;
     }
 
-    public static double secondToNano(double seconds) {
-        return seconds / 1E-9f;
+    public static double nanoToMillis(double nanoSecs) {
+        return nanoSecs * 1E-6f;
+    }
+
+    public static double millisToNano(double nanoSecs) {
+        return nanoSecs * 1E+6f;
     }
 
     public static float roundToPlace(float num, int place) {

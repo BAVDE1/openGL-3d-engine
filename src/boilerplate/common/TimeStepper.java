@@ -37,7 +37,7 @@ public class TimeStepper {
                     game.mainLoop(staticDeltaTime);
                     double loopTime = System.nanoTime() - tStart;
                     if (tryOptimise && accumulator + loopTime < halfDtN) {  // only sleep if there is enough time
-                        Thread.sleep((long) Math.floor(MathUtils.nanoToSecond(halfDtN)));  // give it a little break *-*
+                        Thread.sleep((long) Math.floor(MathUtils.nanoToMillis(halfDtN)));  // give it a little break *-*
                     }
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Program closed while thread was asleep (between frames)");
@@ -54,7 +54,7 @@ public class TimeStepper {
         while (!game.shouldClose()) {
             try {
                 double t = System.nanoTime();
-                Thread.sleep((long) Math.floor(MathUtils.secondToMillis(targetDeltaTime)));  // give it a little break *-*
+                Thread.sleep((long) Math.floor(MathUtils.secondToMillis(targetDeltaTime)));
                 game.mainLoop(MathUtils.nanoToSecond(System.nanoTime() - t));
             } catch (InterruptedException e) {
                 throw new RuntimeException("Program closed while thread was asleep (between frames)");
