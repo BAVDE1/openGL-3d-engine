@@ -132,7 +132,8 @@ public class Model {
                 Assimp.aiProcess_Triangulate |  // handles concave polygons
                         Assimp.aiProcess_GenSmoothNormals |
                         (flipTextures ? Assimp.aiProcess_FlipUVs : 0) |  // make upper left corner 0, 0
-                        Assimp.aiProcess_CalcTangentSpace)) {
+                        Assimp.aiProcess_CalcTangentSpace |
+                        Assimp.aiProcess_JoinIdenticalVertices)) {
             boolean failed = true;
             String failedMsg = "no message";
             if (aiScene == null) {
@@ -426,7 +427,7 @@ public class Model {
 
         shaderProgram.uniformMatrix4f(modelUniform, modelTransformOverride);
         for (Mesh mesh : meshes) mesh.draw(shaderProgram, textureSlotStart);
-        GL45.glActiveTexture(GL45.GL_TEXTURE0);
+        GL45.glActiveTexture(GL45.GL_TEXTURE0);  // reset
         if (renderBones) renderBones();
     }
 

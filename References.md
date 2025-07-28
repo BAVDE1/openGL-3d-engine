@@ -41,6 +41,8 @@ https://docs.tizen.org/application/native/guides/graphics/vertex-shader/ \
 https://www.khronos.org/opengl/wiki/Shader \
 https://theorangeduck.com/page/avoiding-shader-conditionals
 
+parallax self shadow: https://web.archive.org/web/20190131000650/https://www.sunandblackcat.com/tipFullView.php?topicid=28
+
 gamma: https://blog.johnnovak.net/2016/09/21/what-every-coder-should-know-about-gamma/
 
 panorama to cube map: https://jaxry.github.io/panorama-to-cubemap/

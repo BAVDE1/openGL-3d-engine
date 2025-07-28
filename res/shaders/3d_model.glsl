@@ -94,9 +94,9 @@ struct BlinnPhong {
 };
 
 vec3 gammaEncode(vec3 col);
-vec3 calcPointLight(Light light, vec3 normal, vec3 diffuseTexture);
-vec3 calcDirectionLighting(vec3 normal, vec3 diffuseTexture);
-vec3 calcSpotLight(vec3 normal, vec3 diffuseTexture);
+vec3 calcPointLight(Light light, vec3 normal, vec3 viewDir, vec3 diffuseTexture);
+vec3 calcDirectionLighting(vec3 normal, vec3 viewDir, vec3 diffuseTexture);
+vec3 calcSpotLight(vec3 normal, vec3 viewDir, vec3 diffuseTexture);
 vec3 calcLightingWithShadows(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, Light light);
 vec3 calcLighting(float attenuation, vec3 viewDir, vec3 lightDir, vec3 normal, vec3 diffuseTexture, Light light);
 
@@ -160,12 +160,13 @@ void main() {
     vec3 mapped = vec3(1) - exp(-hdrCol * EXPOSURE);
     vec3 col = gammaEncode(mapped);
 
+    vec3 viewDir = normalize(viewPos - fs_in.fragPos);
     vec3 finalCol = vec3(0);
-    finalCol += calcDirectionLighting(normal, col);
     for (int i = 0; i < LIGHT_COUNT; i++) {
-        finalCol += calcPointLight(pointLights[i], normal, col);
+        finalCol += calcPointLight(pointLights[i], normal, viewDir, col);
     }
-    finalCol += calcSpotLight(normal, col) * flashLightStrength;
+    finalCol += calcDirectionLighting(normal, viewDir, col);
+    finalCol += calcSpotLight(normal, viewDir, col) * flashLightStrength;
     colour = vec4(finalCol, 1);
 
     float brightness = dot(colour.rgb, vec3(0.2126, 0.7152, 0.0722));  // relative luminance
@@ -182,25 +183,22 @@ float calcAttenuation(Light light) {
     return 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 }
 
-vec3 calcPointLight(Light light, vec3 normal, vec3 diffuseTexture) {
+vec3 calcPointLight(Light light, vec3 normal, vec3 viewDir, vec3 diffuseTexture) {
     float attenuation = calcAttenuation(light);
-    vec3 viewDir = normalize(viewPos - fs_in.fragPos);
     vec3 lightDir = normalize(light.position - fs_in.fragPos);
     return calcLightingWithShadows(attenuation, viewDir, lightDir, normal, diffuseTexture, light);
 }
 
-vec3 calcDirectionLighting(vec3 normal, vec3 diffuseTexture) {
-    vec3 viewDir = normalize(viewPos - fs_in.fragPos);
+vec3 calcDirectionLighting(vec3 normal, vec3 viewDir, vec3 diffuseTexture) {
     vec3 lightDir = normalize(-skyLight.direction);
     return calcLightingWithShadows(1, viewDir, lightDir, normal, diffuseTexture, skyLight);
 }
 
-vec3 calcSpotLight(vec3 normal, vec3 diffuseTexture) {
+vec3 calcSpotLight(vec3 normal, vec3 viewDir, vec3 diffuseTexture) {
     vec3 lightDir = normalize(spotLight.position - fs_in.fragPos);
     float theta = dot(lightDir, normalize(-spotLight.direction));
     if (theta > spotLight.outerCutoff) {  // cause of cosine: 0 degrees == cos 1, 90 degrees == cos 0
         float attenuation = calcAttenuation(spotLight);
-        vec3 viewDir = normalize(viewPos - fs_in.fragPos);
         float intensity = clamp((theta - spotLight.outerCutoff) / (spotLight.cutoff - spotLight.outerCutoff), 0, 1);
         return calcLighting(attenuation * intensity, viewDir, lightDir, normal, diffuseTexture, spotLight);
     }
@@ -222,15 +220,17 @@ vec3 calcPointShadows() {
     vec3 shadow = vec3(0);
     for (int i = 0; i < LIGHT_COUNT; i++) {
         vec3 fragToLight = fs_in.fragPos - pointLights[i].position;
-        float closestDepth = texture(pointShadowMaps[i], fragToLight).r * farPlane;
         float currentDepth = length(fragToLight);
         float attenuation = calcAttenuation(pointLights[i]);
-        float addition = 0;
-        for (int s = 0; s < 20; s++) {
-            float closestDepth = texture(pointShadowMaps[i], fragToLight + POINT_SHADOW_MAP_OFFSETS[s] * .02).r * farPlane;
-            addition += currentDepth - SHADOW_BIAS > closestDepth ? 1 : 0;
-        }
-        shadow += (pointLights[i].diffuse * attenuation) * addition / 20;
+//        float addition = 0;
+//        for (int s = 0; s < 20; s++) {
+//            float closestDepth = texture(pointShadowMaps[i], fragToLight + POINT_SHADOW_MAP_OFFSETS[s] * .02).r * farPlane;
+//            addition += currentDepth - SHADOW_BIAS > closestDepth ? 1 : 0;
+//        }
+//        shadow += (pointLights[i].diffuse * attenuation) * addition / 20;
+
+        float closestDepth = texture(pointShadowMaps[i], fragToLight).r * farPlane;
+        shadow += (pointLights[i].diffuse * attenuation) * (currentDepth - SHADOW_BIAS > closestDepth ? 1 : 0);
     }
     return shadow / LIGHT_COUNT;
 }

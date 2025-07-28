@@ -75,6 +75,7 @@ public class FrameBuffer {
 
     public static int defaultColourBuffStoredFormat = GL45.GL_RGBA16F;
     public static int defaultColourBuffGivenFormat = GL45.GL_RGBA;
+    public static int defaultColourBuffPixelDataType = GL45.GL_UNSIGNED_BYTE;
 
     protected Integer bufferId;
 
@@ -125,12 +126,14 @@ public class FrameBuffer {
         GL45.glBlitFramebuffer(0, 0, size.width, size.height, 0, 0, destinationSize.width, destinationSize.height, mask, interpolation);
     }
 
-    public void attachColourBuffer2D(Texture colourBuff) {
-        boolean multisample = colourBuff instanceof Texture2dMultisample;
-        bind();
-        GL45.glFramebufferTexture2D(GL45.GL_FRAMEBUFFER, GL45.GL_COLOR_ATTACHMENT0 + colourBuffers.size(), multisample ? GL45.GL_TEXTURE_2D_MULTISAMPLE : GL45.GL_TEXTURE_2D, colourBuff.getId(), 0);
-        colourBuffers.add(colourBuff);
-        Logging.debug("Attached colour buffer 2D to frame buffer (fb id: %s), (texture id: %s, col buff index: %s)", getId(), colourBuff.getId(), colourBuffers.size()-1);
+    public void attachColourBuffer2D(Texture... colourBuffs) {
+        for (Texture colourBuff : colourBuffs) {
+            boolean multisample = colourBuff instanceof Texture2dMultisample;
+            bind();
+            GL45.glFramebufferTexture2D(GL45.GL_FRAMEBUFFER, GL45.GL_COLOR_ATTACHMENT0 + colourBuffers.size(), multisample ? GL45.GL_TEXTURE_2D_MULTISAMPLE : GL45.GL_TEXTURE_2D, colourBuff.getId(), 0);
+            colourBuffers.add(colourBuff);
+            Logging.debug("Attached colour buffer 2D to frame buffer (fb id: %s), (texture id: %s, col buff index: %s)", getId(), colourBuff.getId(), colourBuffers.size() - 1);
+        }
     }
 
     public void attachDepthBuffer2D(Texture depthBuff) {
@@ -173,7 +176,7 @@ public class FrameBuffer {
     }
 
     public static Texture setupDefaultColourBuffer(Dimension size) {
-        Texture t = setupTextureBuffer(size, defaultColourBuffStoredFormat, defaultColourBuffGivenFormat, GL45.GL_UNSIGNED_BYTE);
+        Texture t = setupTextureBuffer(size, defaultColourBuffStoredFormat, defaultColourBuffGivenFormat, defaultColourBuffPixelDataType);
         t.useNearestInterpolation();
         t.useClampEdgeWrap();
         return t;
@@ -237,9 +240,9 @@ public class FrameBuffer {
         return rb;
     }
 
-    public void drawToMultipleColourBuffers(int... attachmentIndex) {
-        for (int i = 0; i < attachmentIndex.length; i++) attachmentIndex[i] = GL45.GL_COLOR_ATTACHMENT0 + attachmentIndex[i];
-        GL45.glDrawBuffers(attachmentIndex);
+    public void drawToMultipleColourBuffers(int... attachmentIndices) {
+        for (int i = 0; i < attachmentIndices.length; i++) attachmentIndices[i] = GL45.GL_COLOR_ATTACHMENT0 + attachmentIndices[i];
+        GL45.glDrawBuffers(attachmentIndices);
     }
 
     public void genId() {

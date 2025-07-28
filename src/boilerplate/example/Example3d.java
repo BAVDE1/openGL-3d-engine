@@ -22,6 +22,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL45;
+import org.w3c.dom.Text;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -59,6 +60,8 @@ public class Example3d extends GameBase {
     Light.LightGroup lightGroup = new Light.LightGroup();
     DirectionalLight skyLight = new DirectionalLight(new Vector3f(0, -1, 1));
     SpotLight spotLight = new SpotLight(camera.getPos(), camera.getForward(), 10, 12);
+
+    FrameBuffer gBuffer = new FrameBuffer(SCREEN_SIZE);
 
     FrameBuffer fb = new FrameBuffer(SCREEN_SIZE);
     FrameBuffer[] pingPongFbs = new FrameBuffer[]{new FrameBuffer(SCREEN_SIZE), new FrameBuffer(SCREEN_SIZE)};
@@ -195,6 +198,16 @@ public class Example3d extends GameBase {
         rectData.pushPolygon(Shape2d.createRect(new Vector2f(-1), new Vector2f(2)));
         vbPost.bufferData(rectData);
 
+        gBuffer.genId();
+        Texture posBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);
+        Texture normalBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);
+//        Texture tangentBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);
+        Texture colourSpecBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);
+        gBuffer.attachColourBuffer2D(posBuffer, normalBuffer, colourSpecBuffer);
+        gBuffer.drawToMultipleColourBuffers(0, 1, 2);
+        gBuffer.attachRenderBuffer(gBuffer.setupDefaultRenderBuffer());
+        gBuffer.checkCompletionOrError();
+
         fb.genId();
         FrameBuffer.RenderBuffer rb = new FrameBuffer.RenderBuffer(true);
         rb.createBufferMultisample(SCREEN_SIZE, GL45.GL_DEPTH24_STENCIL8, GL45.GL_DEPTH_STENCIL_ATTACHMENT, 4);
@@ -203,8 +216,7 @@ public class Example3d extends GameBase {
         fb.attachRenderBuffer(rb);
         fb.drawToMultipleColourBuffers(0, 1);
         fb.intermediaryFB = fb.createIntermediaryFB();
-        fb.intermediaryFB.attachColourBuffer2D(fb.intermediaryFB.setupDefaultColourBuffer());
-        fb.intermediaryFB.attachColourBuffer2D(fb.intermediaryFB.setupDefaultColourBuffer());
+        fb.intermediaryFB.attachColourBuffer2D(fb.intermediaryFB.setupDefaultColourBuffer(), fb.intermediaryFB.setupDefaultColourBuffer());
         fb.intermediaryFB.checkCompletionOrError();
         fb.checkCompletionOrError();
 
@@ -362,11 +374,9 @@ public class Example3d extends GameBase {
             Renderer.clearD();
             Renderer.enableDepthTest();
             Renderer.cullFrontFace();
-            modelFloor.draw(shadowMapShader, 0);
             modelFloor.draw(shadowMapShader, 0, modelFloorTrans1);
             modelFloor.draw(shadowMapShader, 0, modelFloorTrans2);
             Renderer.cullBackFace();
-//            modelTiles.draw(modelShader, 0);
             model.draw(shadowMapShader, 0);
             model2.draw(shadowMapShader, 0);
             model3.draw(shadowMapShader, 0);
@@ -376,7 +386,7 @@ public class Example3d extends GameBase {
 
             GPUProfiler.startLog("point maps");
             Renderer.enableDepthTest();
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < pointShadowMaps.size(); i++) {
                 FrameBuffer fb = pointShadowMaps.get(i);
                 PointLight light = (PointLight) lightGroup.lights.get(i);
                 fb.bind();
