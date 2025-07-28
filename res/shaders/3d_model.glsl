@@ -4,11 +4,10 @@
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec3 tangent;
-layout(location = 3) in vec3 bitangent;
-layout(location = 4) in vec2 texCoords;
-layout(location = 5) in ivec4 boneIds;
-layout(location = 6) in vec4 boneWeights;
-layout(location = 7) in int isStatic;
+layout(location = 3) in vec2 texCoords;
+layout(location = 4) in ivec4 boneIds;
+layout(location = 5) in vec4 boneWeights;
+layout(location = 6) in int isStatic;
 
 layout (std140) uniform CameraView {
     mat4 projection;
@@ -48,8 +47,9 @@ void main() {
 
     mat4 modelAnimTransformed = model * animTransformation;
     vec3 T = normalize(vec3(modelAnimTransformed * vec4(tangent, 0.0)));
-    vec3 B = normalize(vec3(modelAnimTransformed * vec4(bitangent, 0.0)));
     vec3 N = normalize(vec3(modelAnimTransformed * vec4(normal, 0.0)));
+    T = normalize(T - dot(T, N) * N);
+    vec3 B = cross(N, T);
     mat3 TBN = mat3(T, B, N);
 
     vs_out.fragPos = vec3(model * finalPos);

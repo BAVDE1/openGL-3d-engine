@@ -491,7 +491,6 @@ public class Model {
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_POSITION),
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_NORMAL),
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_TANGENT),
-                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_BITANGENT),
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 2, VertexLayout.HINT_TEX_POS),
                 new VertexLayout.Element(VertexLayout.TYPE_INT, MAX_BONE_INFLUENCE, VertexLayout.HINT_BONE_IDS),
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, MAX_BONE_INFLUENCE, VertexLayout.HINT_BONE_WEIGHTS, true),

@@ -4,11 +4,10 @@
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec3 tangent;
-layout(location = 3) in vec3 bitangent;
-layout(location = 4) in vec2 texCoords;
-layout(location = 5) in ivec4 boneIds;
-layout(location = 6) in vec4 boneWeights;
-layout(location = 7) in int isStatic;
+layout(location = 3) in vec2 texCoords;
+layout(location = 4) in ivec4 boneIds;
+layout(location = 5) in vec4 boneWeights;
+layout(location = 6) in int isStatic;
 
 const int MAX_BONES = 200;
 const int MAX_BONE_INFLUENCE = 4;

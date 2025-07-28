@@ -269,8 +269,8 @@ public class Example3d extends GameBase {
         model4.loadModel("res/models/miku/miku_prefab.fbx", true);
         model4.modelTransform.translate(-3, -1, 2.5f).rotateY(1.2f);
 
-        lightRed.setColourValues(new Vector3f(2, 0, 0), new Vector3f(.8f, 0, 0), new Vector3f());
-        lightBlue.setColourValues(new Vector3f(0, 0, 2), new Vector3f(0, 0, .8f), new Vector3f());
+        lightRed.setColourValues(new Vector3f(2, 0, 0), new Vector3f(10, 0, 0), new Vector3f());
+        lightBlue.setColourValues(new Vector3f(0, 0, 2), new Vector3f(0, 0, 10), new Vector3f());
         lightGroup.addLight(lightRed, lightBlue);
 
         skyLight.diffuse = new Vector3f(.8f);
