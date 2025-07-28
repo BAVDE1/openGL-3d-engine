@@ -32,7 +32,8 @@ public abstract class Texture {
         glBindTexture(textureTarget, textureId);
     }
 
-    public static void unbind(int textureType) {
+    public static void unbind(int textureType, int slot) {
+        glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(textureType, 0);
     }
 

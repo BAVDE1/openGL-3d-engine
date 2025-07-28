@@ -111,12 +111,11 @@ public class Texture2d extends Texture {
         sh.uniform1iv("textures", boundSlots.keySet().stream().mapToInt(i -> i).toArray());
     }
 
-    public static void unbind() {
-        Texture.unbind(GL_TEXTURE_2D);
+    public static void unbind(int slot) {
+        Texture.unbind(GL_TEXTURE_2D, slot);
     }
 
     public static void deleteAll() {
-        unbind();
         for (int id : boundSlots.values()) glDeleteTextures(id);
         boundSlots.clear();
     }

@@ -55,7 +55,7 @@ public class SkyBox {
         skyBoxTexture.loadFaces(textureFileNames);
         skyBoxTexture.useLinearInterpolation();
         skyBoxTexture.useClampEdgeWrap();
-        CubeMap.unbind();
+        CubeMap.unbind(0);
     }
 
     public void bindSkyBoxTexture() {

@@ -106,7 +106,7 @@ const float EXPOSURE = .8;
 const int LIGHT_COUNT = 2;
 const float SHADOW_BIAS = .001;
 const float POINT_SHADOW_BIAS = .05;
-const float SHADOW_MAP_TEXEL_SIZE = 1.0 / (800.0 * 2);
+const float SHADOW_MAP_TEXEL_SIZE = 1.0 / (800.0);
 const vec2 SHADOW_MAP_OFFSETS[9] = vec2[](
     vec2(-SHADOW_MAP_TEXEL_SIZE,  SHADOW_MAP_TEXEL_SIZE), // top-left
     vec2( 0.0f,       SHADOW_MAP_TEXEL_SIZE), // top-center
@@ -134,6 +134,7 @@ uniform Light spotLight;
 uniform float flashLightStrength;
 uniform vec3 viewPos;
 uniform float farPlane;
+uniform bool useNormalMap;
 
 uniform sampler2D shadowMap;
 uniform samplerCube pointShadowMaps[LIGHT_COUNT];
@@ -150,12 +151,14 @@ layout (location = 0) out vec4 colour;
 layout (location = 1) out vec4 brightColour;
 
 void main() {
-//    if (material.normalMap != ERROR) {
-        vec3 normal = texture(material.normalMap, fs_in.texCoords).rgb;
+    vec3 normal;
+    if (useNormalMap) {
+        normal = texture(material.normalMap, fs_in.texCoords).rgb;
         normal = normalize(fs_in.TBN * (normal * 2.0 - 1.0));
-//    } else {
-//        vec3 normal = normalize(fs_in.normal);
-//    }
+    } else {
+        normal = normalize(fs_in.normal);
+    }
+
     vec3 hdrCol = texture(material.diffuseTexture, fs_in.texCoords).xyz;
     vec3 mapped = vec3(1) - exp(-hdrCol * EXPOSURE);
     vec3 col = gammaEncode(mapped);
@@ -170,7 +173,7 @@ void main() {
     colour = vec4(finalCol, 1);
 
     float brightness = dot(colour.rgb, vec3(0.2126, 0.7152, 0.0722));  // relative luminance
-    if (brightness > 1.4) brightColour = vec4(colour.rgb, 1.0);
+    if (brightness > 1.6) brightColour = vec4(colour.rgb, 1.0);
     else brightColour = vec4(0.0, 0.0, 0.0, 1.0);
 }
 
@@ -222,15 +225,15 @@ vec3 calcPointShadows() {
         vec3 fragToLight = fs_in.fragPos - pointLights[i].position;
         float currentDepth = length(fragToLight);
         float attenuation = calcAttenuation(pointLights[i]);
-//        float addition = 0;
-//        for (int s = 0; s < 20; s++) {
-//            float closestDepth = texture(pointShadowMaps[i], fragToLight + POINT_SHADOW_MAP_OFFSETS[s] * .02).r * farPlane;
-//            addition += currentDepth - SHADOW_BIAS > closestDepth ? 1 : 0;
-//        }
-//        shadow += (pointLights[i].diffuse * attenuation) * addition / 20;
+        float addition = 0;
+        for (int s = 0; s < 20; s++) {
+            float closestDepth = texture(pointShadowMaps[i], fragToLight + POINT_SHADOW_MAP_OFFSETS[s] * .02).r * farPlane;
+            addition += currentDepth - POINT_SHADOW_BIAS > closestDepth ? 1 : 0;
+        }
+        shadow += (pointLights[i].diffuse * attenuation) * addition / 20;
 
-        float closestDepth = texture(pointShadowMaps[i], fragToLight).r * farPlane;
-        shadow += (pointLights[i].diffuse * attenuation) * (currentDepth - SHADOW_BIAS > closestDepth ? 1 : 0);
+//        float closestDepth = texture(pointShadowMaps[i], fragToLight).r * farPlane;
+//        shadow += (pointLights[i].diffuse * attenuation) * (currentDepth - POINT_SHADOW_BIAS > closestDepth ? 1 : 0);
     }
     return shadow / LIGHT_COUNT;
 }

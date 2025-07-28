@@ -67,7 +67,7 @@ public class CubeMap extends Texture {
         GL45.glTexImage2D(GL45.GL_TEXTURE_CUBE_MAP_POSITIVE_X + faceIndex, 0, storedFormat, size.width, size.height, 0, storedFormat, pixelDataType, (ByteBuffer) null);
     }
 
-    public static void unbind() {
-        Texture.unbind(GL45.GL_TEXTURE_CUBE_MAP);
+    public static void unbind(int slot) {
+        Texture.unbind(GL45.GL_TEXTURE_CUBE_MAP, slot);
     }
 }

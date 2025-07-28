@@ -37,7 +37,7 @@ import static org.lwjgl.opengl.GL43.glDebugMessageCallback;
 public class Example3d extends GameBase {
     public boilerplate.common.Window window = new Window();
     public final static Dimension SCREEN_SIZE = new Dimension(800, 800);
-    public final static Dimension SHADOW_MAP_SIZE = new Dimension(SCREEN_SIZE.width * 2, SCREEN_SIZE.height * 2);
+    public final static Dimension SHADOW_MAP_SIZE = new Dimension(SCREEN_SIZE);
 
     boolean renderWireFrame = false;
 
@@ -169,7 +169,7 @@ public class Example3d extends GameBase {
         ballerCube.loadFaces("res/textures/baller.png");
         ballerCube.useNearestInterpolation();
         ballerCube.useClampEdgeWrap();
-        CubeMap.unbind();
+        CubeMap.unbind(0);
         vaCube.genId();
         vbCube.genId();
 
@@ -442,7 +442,9 @@ public class Example3d extends GameBase {
         modelFloor.draw(modelShader, 3);
         modelFloor.draw(modelShader, 3, modelFloorTrans1);
         modelFloor.draw(modelShader, 3, modelFloorTrans2);
+        modelShader.uniformBool("useNormalMap", true);
         modelTiles.draw(modelShader, 3);
+        modelShader.uniformBool("useNormalMap", false);
         model.draw(modelShader, 3);
         model2.draw(modelShader, 3);
         model3.draw(modelShader, 3);
