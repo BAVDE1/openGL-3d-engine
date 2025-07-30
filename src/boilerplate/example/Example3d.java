@@ -172,6 +172,12 @@ public class Example3d extends GameBase {
     }
 
     public void setupBuffers() {
+        camera.target.y = 3;
+        camera.targetRadius = 1.5f;
+        camera.yaw = 90;
+        camera.pitch = -10;
+        camera.forceDirectionUpdate();
+
         ballerCube.genId();
         ballerCube.loadFaces("res/textures/baller.png");
         ballerCube.useNearestInterpolation();
@@ -344,9 +350,9 @@ public class Example3d extends GameBase {
         shParallax.autoInitializeShadersMulti("shaders/3d_parallax.glsl");
         skyLight.uniformValues("skyLight", shParallax);
         shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0));
-        pDiffuse = new Texture2d("res/textures/blocky-cliff-unity/blocky-cliff_albedo.png");
-        pNormal = new Texture2d("res/textures/blocky-cliff-unity/blocky-cliff_normal-ogl.png");
-        pHeight = new Texture2d("res/textures/blocky-cliff-unity/blocky-cliff_height.png");
+        pDiffuse = new Texture2d("res/textures/bricks/bricks2.jpg");
+        pNormal = new Texture2d("res/textures/bricks/bricks2_normal.jpg");
+        pHeight = new Texture2d("res/textures/bricks/bricks2_disp.jpg");
         pDiffuse.useLinearInterpolation();
         pNormal.useLinearInterpolation();
         pHeight.useLinearInterpolation();

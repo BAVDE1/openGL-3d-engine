@@ -249,6 +249,10 @@ public class Camera3d {
         return new Matrix4f().identity().perspective((float) Math.toRadians(fov), aspect, near, far);
     }
 
+    public void forceDirectionUpdate() {
+        calculateDirections();
+    }
+
     private void calculateDirections() {
         clampPitch();
         float cPitch = (float) Math.cos(Math.toRadians(pitch));
