@@ -17,6 +17,7 @@ import boilerplate.rendering.light.PointLight;
 import boilerplate.rendering.light.SpotLight;
 import boilerplate.rendering.textures.CubeMap;
 import boilerplate.rendering.textures.Texture;
+import boilerplate.rendering.textures.Texture2d;
 import boilerplate.utility.Logging;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -90,6 +91,12 @@ public class Example3d extends GameBase {
     ShaderProgram pointShadowMapShader = new ShaderProgram();
     List<CubeMap> pointShadowTextures = Arrays.asList(new CubeMap(), new CubeMap());
     List<FrameBuffer> pointShadowMaps = Arrays.asList(new FrameBuffer(false), new FrameBuffer(false));
+
+    VertexArray vaParallax = new VertexArray();
+    ShaderProgram shParallax = new ShaderProgram();
+    Texture2d pDiffuse;
+    Texture2d pNormal;
+    Texture2d pHeight;
 
     @Override
     public void start() {
@@ -321,6 +328,29 @@ public class Example3d extends GameBase {
         }
         FrameBuffer.unbind();
         pointShadowProjection = new Matrix4f().perspective((float) Math.toRadians(90), (float) SHADOW_MAP_SIZE.width / (float) SHADOW_MAP_SIZE.height, camera.near, camera.far);
+
+        vaParallax.genId();
+        VertexArrayBuffer vbParallax = new VertexArrayBuffer(true);
+        vaParallax.fastSetup(new int[] {3, 2}, vbParallax);
+        vbParallax.bufferData(new float[] {
+                1, 0, -1, 0, 1,
+                -1, 0, -1, 1, 1,
+                -1, 0, 1, 1, 0,
+
+                1, 0, 1, 0, 0,
+                1, 0, -1, 0, 1,
+                -1, 0, 1, 1, 0
+        });
+        shParallax.autoInitializeShadersMulti("shaders/3d_parallax.glsl");
+        skyLight.uniformValues("skyLight", shParallax);
+        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0));
+        pDiffuse = new Texture2d("res/textures/blocky-cliff-unity/blocky-cliff_albedo.png");
+        pNormal = new Texture2d("res/textures/blocky-cliff-unity/blocky-cliff_normal-ogl.png");
+        pHeight = new Texture2d("res/textures/blocky-cliff-unity/blocky-cliff_height.png");
+        pDiffuse.useLinearInterpolation();
+        pNormal.useLinearInterpolation();
+        pHeight.useLinearInterpolation();
+        camera.bindShaderToUniformBlock(shParallax);
     }
 
     public Matrix4f[] generatePointShadowTransformMatrices(PointLight light) {
@@ -431,6 +461,16 @@ public class Example3d extends GameBase {
         shReflect.uniform3f("camPos", camera.getPos());
         shReflect.uniformMatrix4f("model", matModel1.translate(2, 0, 0));
         Renderer.drawArrays(renderWireFrame ? GL_LINES : GL_TRIANGLES, vaCube, 36);
+        GPUProfiler.endLog();
+
+        // parallax plane
+        GPUProfiler.startLog("parallax");
+        shParallax.bind();
+        shParallax.uniform3f("viewPos", camera.getPos());
+        shParallax.uniformTexture("diffuseTexture", pDiffuse, 0);
+        shParallax.uniformTexture("normalMap", pNormal, 1);
+        shParallax.uniformTexture("heightMap", pHeight, 2);
+        Renderer.drawArrays(GL_TRIANGLES, vaParallax, 6);
         GPUProfiler.endLog();
 
         // models

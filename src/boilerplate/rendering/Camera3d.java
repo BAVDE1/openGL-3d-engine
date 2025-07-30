@@ -149,7 +149,7 @@ public class Camera3d {
     }
 
     public void processKeyInputs(Window window, double dt) {
-        float speedMul = window.isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 3 : 1;
+        float speedMul = window.isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 3 : (window.isKeyPressed(GLFW_KEY_LEFT_ALT) ? .3f : 1);
         boolean rotUpdated = false;
 
         // rotation
