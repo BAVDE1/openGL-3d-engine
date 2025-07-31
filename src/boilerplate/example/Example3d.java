@@ -349,7 +349,7 @@ public class Example3d extends GameBase {
         });
         shParallax.autoInitializeShadersMulti("shaders/3d_parallax.glsl");
         skyLight.uniformValues("skyLight", shParallax);
-        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0).rotateX(-.2f));
+        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0));
         pDiffuse = new Texture2d("res/textures/limestone/albedo.png");
         pNormal = new Texture2d("res/textures/limestone/normal.png");
         pHeight = new Texture2d("res/textures/limestone/height.png");
