@@ -175,7 +175,7 @@ public class Example3d extends GameBase {
         camera.target.y = 3;
         camera.targetRadius = 1.5f;
         camera.yaw = 90;
-        camera.pitch = -10;
+        camera.pitch = -45;
         camera.forceDirectionUpdate();
 
         ballerCube.genId();
@@ -349,10 +349,10 @@ public class Example3d extends GameBase {
         });
         shParallax.autoInitializeShadersMulti("shaders/3d_parallax.glsl");
         skyLight.uniformValues("skyLight", shParallax);
-        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0));
-        pDiffuse = new Texture2d("res/textures/bricks/bricks2.jpg");
-        pNormal = new Texture2d("res/textures/bricks/bricks2_normal.jpg");
-        pHeight = new Texture2d("res/textures/bricks/bricks2_disp.jpg");
+        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0).rotateX(-.2f));
+        pDiffuse = new Texture2d("res/textures/limestone/albedo.png");
+        pNormal = new Texture2d("res/textures/limestone/normal.png");
+        pHeight = new Texture2d("res/textures/limestone/height.png");
         pDiffuse.useLinearInterpolation();
         pNormal.useLinearInterpolation();
         pHeight.useLinearInterpolation();
@@ -476,7 +476,9 @@ public class Example3d extends GameBase {
         shParallax.uniformTexture("diffuseTexture", pDiffuse, 0);
         shParallax.uniformTexture("normalMap", pNormal, 1);
         shParallax.uniformTexture("heightMap", pHeight, 2);
+        Renderer.disableFaceCulling();
         Renderer.drawArrays(GL_TRIANGLES, vaParallax, 6);
+        Renderer.enableFaceCulling();
         GPUProfiler.endLog();
 
         // models

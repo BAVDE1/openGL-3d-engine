@@ -86,6 +86,10 @@ public class Renderer {
         glFrontFace(GL_CCW);  // note: winding order is calculated after vertex shader
     }
 
+    public static void enableFaceCulling() {
+        glEnable(GL_CULL_FACE);
+    }
+
     public static void enableFaceCulling(int face) {
         glEnable(GL_CULL_FACE);
         glCullFace(face);

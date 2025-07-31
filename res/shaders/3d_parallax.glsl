@@ -70,6 +70,9 @@ in VS_OUT {
     mat3 TBN;
 } fs_in;
 
+const float HEIGHT_SCALE = .4;
+const int NUM_DEPTH_LAYERS = 10;
+
 out vec4 colour;
 
 vec3 doBlinnPhong(vec3 viewDir, vec3 normal, vec3 textureCol) {
@@ -84,9 +87,59 @@ vec3 doBlinnPhong(vec3 viewDir, vec3 normal, vec3 textureCol) {
 }
 
 vec2 parallaxMapping(vec3 viewDir) {
-    float height = texture(heightMap, fs_in.texCoords).r;
-    vec2 p = viewDir.xy / viewDir.z * (height * .05);
-    return fs_in.texCoords - p;
+    const float minLayers = 2;
+    const float maxLayers = 32;
+    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
+
+    float layerDepth = 1.0 / numLayers;
+    float currentLayerDepth = 0.0;
+    vec2 deltaTexCoords = (viewDir.xy / viewDir.z * HEIGHT_SCALE) / numLayers;
+
+    vec2  currentTexCoords = fs_in.texCoords;
+    float currentDepthMapValue = 1-texture(heightMap, currentTexCoords).r;
+
+    while(currentLayerDepth < currentDepthMapValue) {
+        currentTexCoords -= deltaTexCoords;
+        currentDepthMapValue = 1-texture(heightMap, currentTexCoords).r;
+        currentLayerDepth += layerDepth;
+    }
+
+    // parallax occlusion mapping
+//    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+//    float afterDepth  = currentDepthMapValue - currentLayerDepth;
+//    float beforeDepth = texture(heightMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+//    float weight = afterDepth / (afterDepth - beforeDepth);
+//    return prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+
+    // parallax relief mapping
+    deltaTexCoords /= 2;
+    layerDepth /= 2;
+
+    // return to the mid point of previous layer
+    currentTexCoords += deltaTexCoords;
+    currentLayerDepth -= layerDepth;
+
+    // binary search to increase precision of Steep Paralax Mapping
+    const int numSearches = 5;
+    for(int i = 0; i < numSearches; ++i) {
+        // decrease shift and height of layer by half
+        deltaTexCoords /= 2;
+        layerDepth /=2;
+
+        // new depth from heightmap
+        currentDepthMapValue = 1-texture(heightMap, currentTexCoords).r;
+
+        // shift along or aginas vector ViewDir
+        if(currentDepthMapValue > currentLayerDepth) {
+            currentTexCoords -= deltaTexCoords;
+            currentLayerDepth += layerDepth;
+        } else {
+            currentTexCoords += deltaTexCoords;
+            currentLayerDepth -= layerDepth;
+        }
+    }
+
+    return currentTexCoords;
 }
 
 void main() {

@@ -87,10 +87,9 @@ public class GPUProfiler {
         log.msTime = getTimeFromQueries(log.startQuery, log.endQuery);
         String space = whitespace.substring(log.name.length());
         double avg = calcLogAverage(log);  // still need to call this even if silent
-        if (!silent) Logging.info("%s%s:%s %.2fms (avg: %.2f)", "\t".repeat(log.depth), log.name, space, log.msTime, avg);
-        double total = log.msTime;
-        for (Log child : log.children) total += dumpLog(silent, child);
-        return total;
+        if (!silent) Logging.info("%s%s:%s %.3fms \u001B[37m(avg: %.2f)\u001B[0m", "\t".repeat(log.depth), log.name, space, log.msTime, avg);
+        for (Log child : log.children) dumpLog(silent, child);  // don't add the children's times
+        return log.msTime;
     }
 
     public static void dumpAllLogs(boolean silent) {
@@ -116,9 +115,10 @@ public class GPUProfiler {
         double total = 0;
         for (String logName : logAverages.keySet()) {
             String space = whitespace.substring(logName.length());
-            double avg = Arrays.stream(logAverages.get(logName).averages).sum() / AVERAGE_HISTORY;
-            total += avg;
-            Logging.info("%s%s:%s %.5fms", "\t".repeat(logAverages.get(logName).depth), logName, space, avg);
+            LogAverages la = logAverages.get(logName);
+            double avg = Arrays.stream(la.averages).sum() / AVERAGE_HISTORY;
+            total += la.depth == 0 ? avg : 0;
+            Logging.info("%s%s:%s %.5fms", "\t".repeat(la.depth), logName, space, avg);
         }
         Logging.debug("avg total: %.3f", total);
         Logging.mystical("End averages");
