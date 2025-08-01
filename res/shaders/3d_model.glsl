@@ -104,7 +104,7 @@ const float GAMMA = 1.5;
 const float EXPOSURE = .8;
 
 const int LIGHT_COUNT = 2;
-const float SHADOW_BIAS = .001;
+const float SHADOW_BIAS = .002;
 const float POINT_SHADOW_BIAS = .05;
 const float SHADOW_MAP_TEXEL_SIZE = 1.0 / (800.0);
 const vec2 SHADOW_MAP_OFFSETS[9] = vec2[](

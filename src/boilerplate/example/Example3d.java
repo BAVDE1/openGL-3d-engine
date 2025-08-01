@@ -339,20 +339,20 @@ public class Example3d extends GameBase {
         VertexArrayBuffer vbParallax = new VertexArrayBuffer(true);
         vaParallax.fastSetup(new int[] {3, 2}, vbParallax);
         vbParallax.bufferData(new float[] {
-                1, 0, -1, 0, 1,
-                -1, 0, -1, 1, 1,
-                -1, 0, 1, 1, 0,
+                -1, -1, 0, 1, 1,
+                1, -1, 0, 0, 1,
+                -1, 1, 0, 1, 0,
 
-                1, 0, 1, 0, 0,
-                1, 0, -1, 0, 1,
-                -1, 0, 1, 1, 0
+                1, -1, 0, 0, 1,
+                1, 1, 0, 0, 0,
+                -1, 1, 0, 1, 0
         });
         shParallax.autoInitializeShadersMulti("shaders/3d_parallax.glsl");
         skyLight.uniformValues("skyLight", shParallax);
-        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0));
-        pDiffuse = new Texture2d("res/textures/limestone/albedo.png");
-        pNormal = new Texture2d("res/textures/limestone/normal.png");
-        pHeight = new Texture2d("res/textures/limestone/height.png");
+        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0).rotateY((float) Math.PI).rotateX((float) Math.PI * -.5f));
+        pDiffuse = new Texture2d("res/textures/stone-wall/albedo.png");
+        pNormal = new Texture2d("res/textures/stone-wall/normal.png");
+        pHeight = new Texture2d("res/textures/stone-wall/height.png");
         pDiffuse.useLinearInterpolation();
         pNormal.useLinearInterpolation();
         pHeight.useLinearInterpolation();
@@ -473,12 +473,13 @@ public class Example3d extends GameBase {
         GPUProfiler.startLog("parallax");
         shParallax.bind();
         shParallax.uniform3f("viewPos", camera.getPos());
+//        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0).rotateY((float) glfwGetTime()));
         shParallax.uniformTexture("diffuseTexture", pDiffuse, 0);
         shParallax.uniformTexture("normalMap", pNormal, 1);
         shParallax.uniformTexture("heightMap", pHeight, 2);
-        Renderer.disableFaceCulling();
+//        Renderer.disableFaceCulling();
         Renderer.drawArrays(GL_TRIANGLES, vaParallax, 6);
-        Renderer.enableFaceCulling();
+//        Renderer.enableFaceCulling();
         GPUProfiler.endLog();
 
         // models
