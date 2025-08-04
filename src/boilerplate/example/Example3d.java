@@ -473,7 +473,7 @@ public class Example3d extends GameBase {
         GPUProfiler.startLog("parallax");
         shParallax.bind();
         shParallax.uniform3f("viewPos", camera.getPos());
-//        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0).rotateY((float) glfwGetTime()));
+//        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0).rotateX((float) glfwGetTime() * .3f));
         shParallax.uniformTexture("diffuseTexture", pDiffuse, 0);
         shParallax.uniformTexture("normalMap", pNormal, 1);
         shParallax.uniformTexture("heightMap", pHeight, 2);

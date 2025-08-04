@@ -125,12 +125,12 @@ vec2 parallaxMapping(vec3 viewDir) {
     // binary search to increase precision of Steep Paralax Mapping
     const int numSearches = 5;
     for (int i = 0; i < numSearches; ++i) {
-        deltaTexCoords /= 2;  // decrease shift and height of layer by half
+        deltaTexCoords /= 2;
         layerDepth /=2;
 
         currentDepthMapValue = 1-texture(heightMap, currentTexCoords).r;
 
-        // shift along or aginas vector ViewDir
+        // shift along or against vector ViewDir
         if (currentDepthMapValue > currentLayerDepth) {
             currentTexCoords -= deltaTexCoords;
             currentLayerDepth += layerDepth;
