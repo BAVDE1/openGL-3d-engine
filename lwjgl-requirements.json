@@ -8,7 +8,7 @@
     "linux",
     "windows"
   ],
-  "descriptions": false,
+  "descriptions": true,
   "compact": false,
   "hardcoded": false,
   "javadoc": false,
@@ -16,7 +16,15 @@
   "source": false,
   "osgi": false,
   "language": "groovy",
-  "preset": "minimal-opengl",
+  "contents": [
+    "lwjgl",
+    "lwjgl-assimp",
+    "lwjgl-glfw",
+    "lwjgl-openal",
+    "lwjgl-opengl",
+    "lwjgl-par",
+    "lwjgl-stb"
+  ],
   "version": "3.3.6",
   "versionLatest": "3.3.6"
 }

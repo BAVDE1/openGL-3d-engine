@@ -23,6 +23,9 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL45;
+import org.lwjgl.util.par.ParShapes;
+import org.lwjgl.util.par.ParShapesMesh;
+import org.lwjgl.util.par.ParShapesRandFn;
 import org.w3c.dom.Text;
 
 import java.awt.*;
@@ -133,8 +136,8 @@ public class Example3d extends GameBase {
                     model4.renderWireFrame(renderWireFrame);
                 }
                 if (key == GLFW_KEY_GRAVE_ACCENT) {
-                    model.renderBones(!model.isRenderingBones());
-                    model2.renderBones(!model2.isRenderingBones());
+                    model.renderBones(!model.renderBones);
+                    model2.renderBones(!model2.renderBones);
                 }
                 if (key == GLFW_KEY_F)
                     camera.setMode(camera.getMode() == Camera3d.MODE_FLY ? Camera3d.MODE_TARGET : Camera3d.MODE_FLY);

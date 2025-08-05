@@ -1,6 +1,5 @@
 package boilerplate.models;
 
-import boilerplate.common.BoilerplateConstants;
 import boilerplate.common.BoilerplateShaders;
 import boilerplate.rendering.Camera3d;
 import boilerplate.rendering.Renderer;
@@ -8,22 +7,15 @@ import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.buffers.VertexArray;
 import boilerplate.rendering.buffers.VertexArrayBuffer;
 import boilerplate.rendering.buffers.VertexLayout;
-import boilerplate.rendering.textures.Texture2d;
 import boilerplate.utility.Logging;
-import boilerplate.utility.MathUtils;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
-import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.*;
-import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL45;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.util.par.ParShapesMesh;
 
-import javax.annotation.processing.SupportedSourceVersion;
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.*;
 
 public class Model {
@@ -84,26 +76,26 @@ public class Model {
         }
     }
 
-    private String modelFile;
-    private String directory;
+    public String modelFile;
+    public String directory;
     public VertexLayout vertexLayout = defaultVertexLayout();
     public ProcessVertexFunc processVertexFunc = defaultProcessVertexFunc();
     public Animator animator = new Animator(this);
 
-    private final NodeData rootNode = new NodeData();
+    public final NodeData rootNode = new NodeData();
     public final Matrix4f rootNodeInvTrans = new Matrix4f();
 
-    private Mesh[] meshes;
-    private Material[] materials;
-    private int boneCounter = 0;
-    private final HashMap<String, Bone> boneMap = new HashMap<>();
+    public Mesh[] meshes;
+    public Material[] materials;
+    public int boneCounter = 0;
+    public final HashMap<String, Bone> boneMap = new HashMap<>();
 
     public Matrix4f modelTransform = new Matrix4f().identity();
 
-    private boolean hasBones = false;
-    private boolean renderWireFrame = false;
-    private boolean renderBones = false;
-    private VertexArray boneVa;
+    public boolean hasBones = false;
+    public boolean renderWireFrame = false;
+    public boolean renderBones = false;
+    public VertexArray boneVa;
 
     public String boneMatrixUniform = "finalBonesMatrices";
     public String modelUniform = "model";
@@ -148,166 +140,12 @@ public class Model {
                 return;
             }
 
-            processScene(aiScene);
+            MeshProcessorAssimp.processScene(this, aiScene);
         }
     }
 
-    private void processScene(AIScene rootAiScene) {
-        // materials
-        materials = new Material[rootAiScene.mNumMaterials()];
-        processMaterials(rootAiScene);
+    public void loadShape(ParShapesMesh shape) {
 
-        // node hierarchy & model
-        meshes = new Mesh[rootAiScene.mNumMeshes()];
-        processNode(rootAiScene.mRootNode(), rootAiScene, rootNode);
-        rootNode.transform.invert(rootNodeInvTrans);
-
-        // animations
-        animator.init(boneCounter, rootNode);
-        processAnimations(rootAiScene);
-    }
-
-    /**
-     * Recursively process a node and its children
-     */
-    private void processNode(AINode aiNode, AIScene rootAiScene, NodeData nodeDest) {
-        if (aiNode == null) {
-            Logging.warn("Node is null, scene: %s", rootAiScene);
-            return;
-        }
-
-        // node hierarchy
-        nodeDest.name = aiNode.mName().dataString();
-        nodeDest.transform = MathUtils.AIMatrixToMatrix(aiNode.mTransformation());
-
-        // meshes
-        PointerBuffer allMeshes = rootAiScene.mMeshes();
-        IntBuffer nodeMeshes = aiNode.mMeshes();  // indexes of scene's meshes
-        if (allMeshes != null && nodeMeshes != null) {
-            while (nodeMeshes.hasRemaining()) {
-                int meshInx = nodeMeshes.get();
-                try (AIMesh aiMesh = AIMesh.create(allMeshes.get(meshInx))) {
-                    meshes[meshInx] = processMesh(aiMesh);
-                }
-            }
-        }
-
-        // process children
-        PointerBuffer children = aiNode.mChildren();
-        if (children == null) return;  // no children :(
-
-        for (int i = 0; i < aiNode.mNumChildren(); i++) {
-            try (AINode child = AINode.create(children.get(i))) {
-                NodeData childNode = new NodeData();
-                processNode(child, rootAiScene, childNode);
-
-                // assign bone parents
-                if (boneMap.containsKey(nodeDest.name) && boneMap.containsKey(childNode.name)) {
-                    boneMap.get(childNode.name).parent = boneMap.get(nodeDest.name);
-                }
-
-                nodeDest.children.add(childNode);
-            }
-        }
-    }
-
-    private Mesh processMesh(AIMesh aiMesh) {
-        Mesh mesh = new Mesh(vertexLayout);
-        mesh.indicesCount = findIndicesCount(aiMesh);
-        mesh.allocateMemory(calculateVertexDataBytes(aiMesh), mesh.indicesCount * Integer.BYTES);
-
-        processBones(mesh, aiMesh);
-        processVertices(mesh, aiMesh);
-        processFaces(mesh, aiMesh);
-        processMeshMaterial(mesh, aiMesh);
-
-        mesh.finalizeMesh();
-        return mesh;
-    }
-
-    private int calculateVertexDataBytes(AIMesh aiMesh) {
-        return aiMesh.mNumVertices() * vertexLayout.stride;
-    }
-
-    private int findIndicesCount(AIMesh aiMesh) {
-        int count = 0;
-        for (int fi = 0; fi < aiMesh.mNumFaces(); fi++) {
-            count += aiMesh.mFaces().get(fi).mNumIndices();
-        }
-        return count;
-    }
-
-    /**
-     * After process bones
-     */
-    private void processVertices(Mesh mesh, AIMesh aiMesh) {
-        AIVector3D.Buffer allVertices = aiMesh.mVertices();
-        AIVector3D.Buffer allNormals = aiMesh.mNormals();
-        AIVector3D.Buffer allTexPos = aiMesh.mTextureCoords(0);
-        AIVector3D.Buffer allTangents = aiMesh.mTangents();
-        AIVector3D.Buffer allBitangents = aiMesh.mTangents();
-
-        // data checks
-        if (allNormals == null && vertexLayout.hasElementWithHint(VertexLayout.HINT_NORMAL))
-            throw new RuntimeException("Given vertex layout contains normals, but mesh data does not contain normals.");
-        if (allTexPos == null && vertexLayout.hasElementWithHint(VertexLayout.HINT_TEX_POS))
-            throw new RuntimeException("Given vertex layout contains texture coords, but mesh data does not contain texture coords.");
-
-        // process
-        for (int i = 0; i < aiMesh.mNumVertices(); i++) {
-            processVertexFunc.call(this, mesh, i, allVertices, allNormals, allTexPos, allTangents, allBitangents);
-        }
-    }
-
-    private void processFaces(Mesh mesh, AIMesh aiMesh) {
-        AIFace.Buffer allFaces = aiMesh.mFaces();
-
-        while (allFaces.hasRemaining()) {
-            IntBuffer indices = allFaces.get().mIndices();
-            while (indices.hasRemaining()) mesh.pushIndice(indices.get());
-        }
-    }
-
-    private void processBones(Mesh mesh, AIMesh aiMesh) {
-        PointerBuffer allBones = aiMesh.mBones();
-        if (allBones == null) return;  // no bones
-
-        hasBones = allBones.hasRemaining();
-        while (allBones.hasRemaining()) {
-            try (AIBone aiBone = AIBone.create(allBones.get())) {
-                String boneName = aiBone.mName().dataString();
-                Bone bone = boneMap.computeIfAbsent(boneName, _ -> new Bone(boneCounter++, aiBone));
-                processBoneWeights(mesh, bone, aiBone);
-            }
-        }
-    }
-
-    private void processBoneWeights(Mesh mesh, Bone bone, AIBone aiBone) {
-        AIVertexWeight.Buffer weights = aiBone.mWeights();
-        while (weights.hasRemaining()) {
-            AIVertexWeight aiWeight = weights.get();
-            int vertexId = aiWeight.mVertexId();
-            float weight = aiWeight.mWeight();
-            if (weight < BoilerplateConstants.EPSILON) continue;  // no need to even add the bone
-
-            List<VertexWeight> vwList = mesh.vertexWeights.computeIfAbsent(vertexId, _ -> new ArrayList<>());
-            vwList.add(new VertexWeight(bone.id, weight));
-        }
-    }
-
-    /**
-     * After process bones
-     */
-    private void processAnimations(AIScene rootAIScene) {
-        PointerBuffer allAnimations = rootAIScene.mAnimations();
-        if (allAnimations == null) return;  // no animations
-
-        while (allAnimations.hasRemaining()) {
-            try (AIAnimation aiAnimation = AIAnimation.create(allAnimations.get())) {
-                Animation animation = new Animation(aiAnimation, this);
-                animator.addAnimation(animation);
-            }
-        }
     }
 
     public void pushVertexBoneIds(Mesh mesh, int vertexInx) {
@@ -323,65 +161,6 @@ public class Model {
         for (int i = 0; i < MAX_BONE_INFLUENCE; i++) {
             if (vwList != null && i < vwList.size()) mesh.pushFloat(vwList.get(i).weight);
             else mesh.pushFloat(VERTEX_WEIGHT_NULL);
-        }
-    }
-
-    private void processMaterials(AIScene rootAiScene) {
-        PointerBuffer allMaterials = rootAiScene.mMaterials();
-        if (allMaterials == null) return;
-
-        for (int mi = 0; mi < rootAiScene.mNumMaterials(); mi++) {
-            try (AIMaterial material = AIMaterial.create(allMaterials.get(mi))) {
-                materials[mi] = processMaterial(material);
-            }
-        }
-    }
-
-    private Material processMaterial(AIMaterial aiMaterial) {
-        Material material = new Material();
-
-        material.diffuseTexture = getMaterialTexture(aiMaterial, Assimp.aiTextureType_DIFFUSE);
-        material.specularMap = getMaterialTexture(aiMaterial, Assimp.aiTextureType_SPECULAR);
-        material.normalMap = getMaterialTexture(aiMaterial, Assimp.aiTextureType_NORMALS);
-
-        material.ambient = getMaterialColour(aiMaterial, Assimp.AI_MATKEY_COLOR_AMBIENT);
-        material.diffuse = getMaterialColour(aiMaterial, Assimp.AI_MATKEY_COLOR_DIFFUSE);
-        material.specular = getMaterialColour(aiMaterial, Assimp.AI_MATKEY_COLOR_SPECULAR);
-
-        material.shininess = 32f;
-        return material;
-    }
-
-    private Texture2d getMaterialTexture(AIMaterial aiMaterial, int type) {
-        AIString texPath = AIString.calloc();
-        Assimp.aiGetMaterialTexture(aiMaterial, type, 0, texPath, (IntBuffer) null, null, null, null, null, null);
-        if (texPath.dataString().isEmpty()) return null;
-
-        String texturePath = texPath.dataString();
-        if (texturePath.contains("\\")) {  // clean the path
-            texturePath = texturePath.substring(texturePath.lastIndexOf("\\") + 1);
-        }
-        return new Texture2d(directory + "/" + texturePath);
-    }
-
-    private Vector3f getMaterialColour(AIMaterial aiMaterial, String type) {
-        AIColor4D colBuff = AIColor4D.create();
-        int result = Assimp.aiGetMaterialColor(aiMaterial, type, Assimp.aiTextureType_NONE, 0, colBuff);
-        if (result == 0) return new Vector3f(colBuff.r(), colBuff.g(), colBuff.b());
-        return new Vector3f();
-    }
-
-    private Float getMaterialFloat(AIMaterial aiMaterial, String type) {
-        float[] f = new float[1];
-        Assimp.aiGetMaterialFloatArray(aiMaterial, type, Assimp.aiTextureType_SHININESS, 0, f, new int[1]);
-        System.out.println(Arrays.toString(f));
-        return f[0];
-    }
-
-    private void processMeshMaterial(Mesh mesh, AIMesh aiMesh) {
-        int matInx = aiMesh.mMaterialIndex();
-        if (matInx >= 0 && matInx < materials.length) {
-            mesh.setMaterial(materials[matInx]);
         }
     }
 
@@ -456,18 +235,6 @@ public class Model {
     public void renderBones(boolean val) {
         if (!hasBones || val == renderBones) return;
         renderBones = val;
-    }
-
-    public boolean isRenderingBones() {
-        return renderBones;
-    }
-
-    public boolean isRenderingWireframe() {
-        return renderWireFrame;
-    }
-
-    public boolean hasBones() {
-        return hasBones;
     }
 
     public Bone getBone(String boneName) {
