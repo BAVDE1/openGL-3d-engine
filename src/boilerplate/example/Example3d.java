@@ -360,6 +360,9 @@ public class Example3d extends GameBase {
         pNormal.useLinearInterpolation();
         pHeight.useLinearInterpolation();
         camera.bindShaderToUniformBlock(shParallax);
+
+        Model m = new Model();
+        m.loadShape(ParShapes.par_shapes_create_cube());
     }
 
     public Matrix4f[] generatePointShadowTransformMatrices(PointLight light) {

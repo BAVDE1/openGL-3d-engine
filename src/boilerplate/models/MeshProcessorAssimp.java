@@ -11,7 +11,6 @@ import org.lwjgl.assimp.*;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public abstract class MeshProcessorAssimp {
@@ -196,7 +195,7 @@ public abstract class MeshProcessorAssimp {
 
         // process
         for (int i = 0; i < aiMesh.mNumVertices(); i++) {
-            model.processVertexFunc.call(model, mesh, i, allVertices, allNormals, allTexPos, allTangents, allBitangents);
+            model.processAssimpVertexFunc.call(model, mesh, i, allVertices, allNormals, allTexPos, allTangents, allBitangents);
         }
     }
 

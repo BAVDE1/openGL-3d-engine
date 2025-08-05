@@ -12,6 +12,7 @@ import org.joml.Matrix4f;
 import org.lwjgl.assimp.*;
 import org.lwjgl.opengl.GL45;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.util.par.ParShapes;
 import org.lwjgl.util.par.ParShapesMesh;
 
 import java.io.File;
@@ -25,22 +26,13 @@ public class Model {
     private static final int BONE_ID_NULL = -1;
     private static final int VERTEX_WEIGHT_NULL = 0;
 
-    public interface ProcessVertexFunc {
+    public interface ProcessAssimpVertexFunc {
         default void call(Model model, Mesh mesh, int vertexInx, AIVector3D.Buffer allVertices, AIVector3D.Buffer allNormals, AIVector3D.Buffer allTexPos, AIVector3D.Buffer allTangents, AIVector3D.Buffer allBitangents) {
-            for (VertexLayout.Element element : model.vertexLayout.elements) {
-                switch (element.hint) {
-                    case (VertexLayout.HINT_POSITION) -> mesh.pushVector3D(allVertices.get(vertexInx));
-                    case (VertexLayout.HINT_NORMAL) -> mesh.pushVector3D(allNormals.get(vertexInx));
-                    case (VertexLayout.HINT_TANGENT) -> mesh.pushVector3D(allTangents.get(vertexInx));
-                    case (VertexLayout.HINT_BITANGENT) -> mesh.pushVector3D(allBitangents.get(vertexInx));
-                    case (VertexLayout.HINT_TEX_POS) -> mesh.pushVector2D(allTexPos.get(vertexInx));
-                    case (VertexLayout.HINT_BONE_IDS) -> model.pushVertexBoneIds(mesh, vertexInx);
-                    case (VertexLayout.HINT_BONE_WEIGHTS) -> model.pushVertexBoneWeights(mesh, vertexInx);
-                    case (VertexLayout.HINT_CUSTOM_0) ->
-                            mesh.pushInt(model.hasBones ? 0 : 1);  // it is static if no bones
-                    default -> throw new RuntimeException("Element from given VertexLayout is missing a hint value.");
-                }
-            }
+        }
+    }
+
+    public interface ProcessShapeVertexFunc {
+        default void call(Model model, Mesh mesh) {
         }
     }
 
@@ -76,10 +68,11 @@ public class Model {
         }
     }
 
+    private boolean loaded = false;
     public String modelFile;
     public String directory;
-    public VertexLayout vertexLayout = defaultVertexLayout();
-    public ProcessVertexFunc processVertexFunc = defaultProcessVertexFunc();
+    public VertexLayout vertexLayout = defaultAssimpVertexLayout();
+    public ProcessAssimpVertexFunc processAssimpVertexFunc = defaultAssimpProcessVertexFunc();
     public Animator animator = new Animator(this);
 
     public final NodeData rootNode = new NodeData();
@@ -108,6 +101,11 @@ public class Model {
     }
 
     public void loadModel(String filePath, boolean flipTextures) {
+        if (loaded) {
+            Logging.warn("This model has already been loaded, aborting.");
+            return;
+        }
+
         Logging.debug("Attempting to load model '%s'", filePath);
 
         File file = new File(filePath);
@@ -141,11 +139,19 @@ public class Model {
             }
 
             MeshProcessorAssimp.processScene(this, aiScene);
+            loaded = true;
         }
     }
 
-    public void loadShape(ParShapesMesh shape) {
+    public void loadShape(ParShapesMesh shapesMesh) {
+        if (loaded) {
+            Logging.warn("This model has already been loaded, aborting.");
+            return;
+        }
 
+        MeshProcessorShapes.processShape(this, shapesMesh);
+        ParShapes.par_shapes_free_mesh(shapesMesh);
+        loaded = true;
     }
 
     public void pushVertexBoneIds(Mesh mesh, int vertexInx) {
@@ -254,7 +260,7 @@ public class Model {
         return materials[index];
     }
 
-    public static VertexLayout defaultVertexLayout() {
+    public static VertexLayout defaultAssimpVertexLayout() {
         return new VertexLayout(
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_POSITION),
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_NORMAL),
@@ -266,11 +272,33 @@ public class Model {
         );
     }
 
-    public static ProcessVertexFunc defaultProcessVertexFunc() {
-        return new ProcessVertexFunc() {
+    public static VertexLayout defaultShapeVertexLayout() {
+        return new VertexLayout(
+                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_POSITION),
+                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_NORMAL),
+                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 2, VertexLayout.HINT_TEX_POS)
+        );
+    }
+
+    public static ProcessAssimpVertexFunc defaultAssimpProcessVertexFunc() {
+        return new ProcessAssimpVertexFunc() {
             @Override
             public void call(Model model, Mesh mesh, int vertexInx, AIVector3D.Buffer allVertices, AIVector3D.Buffer allNormals, AIVector3D.Buffer allTexPos, AIVector3D.Buffer allTangents, AIVector3D.Buffer allBitangents) {
-                ProcessVertexFunc.super.call(model, mesh, vertexInx, allVertices, allNormals, allTexPos, allTangents, allBitangents);
+                for (VertexLayout.Element element : model.vertexLayout.elements) {
+                    switch (element.hint) {
+                        case (VertexLayout.HINT_POSITION) -> mesh.pushVector3D(allVertices.get(vertexInx));
+                        case (VertexLayout.HINT_NORMAL) -> mesh.pushVector3D(allNormals.get(vertexInx));
+                        case (VertexLayout.HINT_TANGENT) -> mesh.pushVector3D(allTangents.get(vertexInx));
+                        case (VertexLayout.HINT_BITANGENT) -> mesh.pushVector3D(allBitangents.get(vertexInx));
+                        case (VertexLayout.HINT_TEX_POS) -> mesh.pushVector2D(allTexPos.get(vertexInx));
+                        case (VertexLayout.HINT_BONE_IDS) -> model.pushVertexBoneIds(mesh, vertexInx);
+                        case (VertexLayout.HINT_BONE_WEIGHTS) -> model.pushVertexBoneWeights(mesh, vertexInx);
+                        case (VertexLayout.HINT_CUSTOM_0) ->
+                                mesh.pushInt(model.hasBones ? 0 : 1);  // it is static if no bones
+                        default ->
+                                throw new RuntimeException("Element from given VertexLayout is missing a hint value.");
+                    }
+                }
             }
         };
     }
