@@ -10,6 +10,7 @@ import boilerplate.rendering.SkyBox;
 import boilerplate.rendering.buffers.FrameBuffer;
 import boilerplate.rendering.buffers.VertexArray;
 import boilerplate.rendering.buffers.VertexArrayBuffer;
+import boilerplate.rendering.buffers.VertexLayout;
 import boilerplate.rendering.builders.*;
 import boilerplate.rendering.light.DirectionalLight;
 import boilerplate.rendering.light.Light;
@@ -95,11 +96,17 @@ public class Example3d extends GameBase {
     List<CubeMap> pointShadowTextures = Arrays.asList(new CubeMap(), new CubeMap());
     List<FrameBuffer> pointShadowMaps = Arrays.asList(new FrameBuffer(false), new FrameBuffer(false));
 
-    VertexArray vaParallax = new VertexArray();
+    Model parallaxPlane = new Model(new VertexLayout(
+            new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_POSITION),
+            new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 2, VertexLayout.HINT_TEX_POS)
+    ));
     ShaderProgram shParallax = new ShaderProgram();
     Texture2d pDiffuse;
     Texture2d pNormal;
     Texture2d pHeight;
+
+    ShaderProgram shShapes = new ShaderProgram();
+    Model shape1 = new Model(Model.defaultShapeVertexLayout());
 
     @Override
     public void start() {
@@ -338,21 +345,10 @@ public class Example3d extends GameBase {
         FrameBuffer.unbind();
         pointShadowProjection = new Matrix4f().perspective((float) Math.toRadians(90), (float) SHADOW_MAP_SIZE.width / (float) SHADOW_MAP_SIZE.height, camera.near, camera.far);
 
-        vaParallax.genId();
-        VertexArrayBuffer vbParallax = new VertexArrayBuffer(true);
-        vaParallax.fastSetup(new int[] {3, 2}, vbParallax);
-        vbParallax.bufferData(new float[] {
-                -1, -1, 0, 1, 1,
-                1, -1, 0, 0, 1,
-                -1, 1, 0, 1, 0,
-
-                1, -1, 0, 0, 1,
-                1, 1, 0, 0, 0,
-                -1, 1, 0, 1, 0
-        });
+        parallaxPlane.loadShape(ParShapes.par_shapes_create_plane(1, 1));
+        parallaxPlane.modelTransform = new Matrix4f().translate(-1, 3, 1).rotateX((float) Math.PI * -.5f).scale(2);
         shParallax.autoInitializeShadersMulti("shaders/3d_parallax.glsl");
         skyLight.uniformValues("skyLight", shParallax);
-        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0).rotateY((float) Math.PI).rotateX((float) Math.PI * -.5f));
         pDiffuse = new Texture2d("res/textures/stone-wall/albedo.png");
         pNormal = new Texture2d("res/textures/stone-wall/normal.png");
         pHeight = new Texture2d("res/textures/stone-wall/height.png");
@@ -361,8 +357,12 @@ public class Example3d extends GameBase {
         pHeight.useLinearInterpolation();
         camera.bindShaderToUniformBlock(shParallax);
 
-        Model m = new Model();
-        m.loadShape(ParShapes.par_shapes_create_cube());
+        shShapes.autoInitializeShadersMulti("shaders/3d_shapes.glsl");
+        camera.bindShaderToUniformBlock(shShapes);
+        ParShapesMesh shape = ParShapes.par_shapes_create_icosahedron();
+        ParShapes.par_shapes_unweld(shape, true);
+        ParShapes.par_shapes_compute_normals(shape);
+        shape1.loadShape(shape);
     }
 
     public Matrix4f[] generatePointShadowTransformMatrices(PointLight light) {
@@ -479,14 +479,15 @@ public class Example3d extends GameBase {
         GPUProfiler.startLog("parallax");
         shParallax.bind();
         shParallax.uniform3f("viewPos", camera.getPos());
-//        shParallax.uniformMatrix4f("model", new Matrix4f().translate(0, 3, 0).rotateX((float) glfwGetTime() * .3f));
         shParallax.uniformTexture("diffuseTexture", pDiffuse, 0);
         shParallax.uniformTexture("normalMap", pNormal, 1);
         shParallax.uniformTexture("heightMap", pHeight, 2);
-//        Renderer.disableFaceCulling();
-        Renderer.drawArrays(GL_TRIANGLES, vaParallax, 6);
-//        Renderer.enableFaceCulling();
+        parallaxPlane.draw(shParallax, 3);
         GPUProfiler.endLog();
+
+        // shapes
+        shShapes.bind();
+        shape1.draw(shShapes, 0);
 
         // models
         GPUProfiler.startLog("models");

@@ -17,6 +17,7 @@ import org.lwjgl.util.par.ParShapesMesh;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.util.*;
 
 public class Model {
@@ -32,7 +33,7 @@ public class Model {
     }
 
     public interface ProcessShapeVertexFunc {
-        default void call(Model model, Mesh mesh) {
+        default void call(Model model, Mesh mesh, int vertexInx, int texCoordInx, FloatBuffer allPoints, FloatBuffer allNormals, FloatBuffer allTexCoords) {
         }
     }
 
@@ -73,6 +74,7 @@ public class Model {
     public String directory;
     public VertexLayout vertexLayout = defaultAssimpVertexLayout();
     public ProcessAssimpVertexFunc processAssimpVertexFunc = defaultAssimpProcessVertexFunc();
+    public ProcessShapeVertexFunc processShapeVertexFunc = defaultShapeProcessVertexFunc();
     public Animator animator = new Animator(this);
 
     public final NodeData rootNode = new NodeData();
@@ -144,12 +146,16 @@ public class Model {
     }
 
     public void loadShape(ParShapesMesh shapesMesh) {
+        loadShape(shapesMesh, new Material());
+    }
+
+    public void loadShape(ParShapesMesh shapesMesh, Material material) {
         if (loaded) {
             Logging.warn("This model has already been loaded, aborting.");
             return;
         }
 
-        MeshProcessorShapes.processShape(this, shapesMesh);
+        MeshProcessorShapes.processShape(this, shapesMesh, material);
         ParShapes.par_shapes_free_mesh(shapesMesh);
         loaded = true;
     }
@@ -275,8 +281,7 @@ public class Model {
     public static VertexLayout defaultShapeVertexLayout() {
         return new VertexLayout(
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_POSITION),
-                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_NORMAL),
-                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 2, VertexLayout.HINT_TEX_POS)
+                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_NORMAL)
         );
     }
 
@@ -297,6 +302,33 @@ public class Model {
                                 mesh.pushInt(model.hasBones ? 0 : 1);  // it is static if no bones
                         default ->
                                 throw new RuntimeException("Element from given VertexLayout is missing a hint value.");
+                    }
+                }
+            }
+        };
+    }
+
+    public static ProcessShapeVertexFunc defaultShapeProcessVertexFunc() {
+        return new ProcessShapeVertexFunc() {
+            @Override
+            public void call(Model model, Mesh mesh, int vertexInx, int texCoordInx, FloatBuffer allPoints, FloatBuffer allNormals, FloatBuffer allTexCoords) {
+                for (VertexLayout.Element element : model.vertexLayout.elements) {
+                    switch (element.hint) {
+                        case (VertexLayout.HINT_POSITION) -> mesh.pushFloats(allPoints.get(vertexInx), allPoints.get(vertexInx+1), allPoints.get(vertexInx+2));
+                        case (VertexLayout.HINT_NORMAL) -> {
+                            if (allNormals == null) {
+                                Logging.danger("A Normal was expected in the layout, but there are no normals generated for the shape.");
+                                continue;
+                            }
+                            mesh.pushFloats(allNormals.get(vertexInx), allNormals.get(vertexInx + 1), allNormals.get(vertexInx + 2));
+                        }
+                        case (VertexLayout.HINT_TEX_POS) -> {
+                            if (allTexCoords == null) {
+                                Logging.danger("A Tex Coord was expected in the layout, but there are no tex coords generated for the shape.");
+                                continue;
+                            }
+                            mesh.pushFloats(allTexCoords.get(texCoordInx), allTexCoords.get(texCoordInx + 1));
+                        }
                     }
                 }
             }

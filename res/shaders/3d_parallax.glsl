@@ -35,16 +35,13 @@ void main() {
     vs_out.texCoords = texCoords;
     vs_out.fragPos = vec3(model * vec4(pos, 1));
 
-    vec3 T = normalize(vec3(model * vec4(1, 0, 0, 0)));
-    vec3 B = normalize(vec3(model * vec4(0, 1, 0, 0)));
-    vec3 N = normalize(vec3(model * vec4(0, 0, -1, 0)));
-    mat3 TBN = transpose(mat3(T, B, N));
+    mat3 TBN = transpose(mat3(model));  // essentially model * identity mat3
     vs_out.tangentViewPos = TBN * viewPos;
     vs_out.tangentFragPos = TBN * vs_out.fragPos;
 
-    T = normalize(vec3(model * vec4(-1, 0, 0, 0)));
-    B = normalize(vec3(model * vec4(0, 1, 0, 0)));
-    N = normalize(vec3(model * vec4(0, 0, 1, 0)));
+    vec3 T = normalize(vec3(model * vec4(-1, 0, 0, 0)));
+    vec3 B = normalize(vec3(model * vec4(0, -1, 0, 0)));
+    vec3 N = normalize(vec3(model * vec4(0, 0, 1, 0)));
     vs_out.normTBN = transpose(mat3(T, B, N));
 }
 
