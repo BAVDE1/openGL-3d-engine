@@ -106,7 +106,12 @@ public class Example3d extends GameBase {
     Texture2d pHeight;
 
     ShaderProgram shShapes = new ShaderProgram();
-    Model shape1 = new Model(Model.defaultShapeVertexLayout());
+    Model[] shapes = new Model[] {
+            new Model(Model.defaultShapeVertexLayout()),
+            new Model(Model.defaultShapeVertexLayout()),
+            new Model(Model.defaultShapeVertexLayout()),
+            new Model(Model.defaultShapeVertexLayout())
+    };
 
     @Override
     public void start() {
@@ -359,10 +364,17 @@ public class Example3d extends GameBase {
 
         shShapes.autoInitializeShadersMulti("shaders/3d_shapes.glsl");
         camera.bindShaderToUniformBlock(shShapes);
-        ParShapesMesh shape = ParShapes.par_shapes_create_icosahedron();
-        ParShapes.par_shapes_unweld(shape, true);
-        ParShapes.par_shapes_compute_normals(shape);
-        shape1.loadShape(shape);
+        ParShapesMesh ico = ParShapes.par_shapes_create_icosahedron();
+        ParShapes.par_shapes_unweld(ico, true);
+        ParShapes.par_shapes_compute_normals(ico);
+        shapes[0].loadShape(ico);
+        shapes[0].modelTransform = new Matrix4f().translate(-4, 0, 10);
+        shapes[1].loadShape(ParShapes.par_shapes_create_cone(10, 1));
+        shapes[1].modelTransform = new Matrix4f().translate(-2, 0, 10).rotateX((float) Math.PI * -.5f);
+        shapes[2].loadShape(ParShapes.par_shapes_create_hemisphere(10, 10));
+        shapes[2].modelTransform = new Matrix4f().translate(0, 0, 10);
+        shapes[3].loadShape(ParShapes.par_shapes_create_torus(10, 10, .5f));
+        shapes[3].modelTransform = new Matrix4f().translate(3, 0, 10);
     }
 
     public Matrix4f[] generatePointShadowTransformMatrices(PointLight light) {
@@ -486,8 +498,10 @@ public class Example3d extends GameBase {
         GPUProfiler.endLog();
 
         // shapes
+        GPUProfiler.startLog("shapes");
         shShapes.bind();
-        shape1.draw(shShapes, 0);
+        for (Model shape : shapes) shape.draw(shShapes, 0);
+        GPUProfiler.endLog();
 
         // models
         GPUProfiler.startLog("models");
