@@ -47,6 +47,8 @@ gamma: https://blog.johnnovak.net/2016/09/21/what-every-coder-should-know-about-
 
 panorama to cube map: https://jaxry.github.io/panorama-to-cubemap/
 
+beware the pipeline: https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/
+
 ---
 
 unfinished wiki: https://en.wikibooks.org/wiki/OpenGL_Programming

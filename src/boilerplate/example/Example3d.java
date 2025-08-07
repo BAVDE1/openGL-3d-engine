@@ -229,7 +229,7 @@ public class Example3d extends GameBase {
         gBuffer.genId();
         Texture posBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);
         Texture normalBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);
-//        Texture tangentBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);
+//        Texture tangentBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);  // todo: later
         Texture colourSpecBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);
         gBuffer.attachColourBuffer2D(posBuffer, normalBuffer, colourSpecBuffer);
         gBuffer.drawToMultipleColourBuffers(0, 1, 2);
@@ -309,8 +309,8 @@ public class Example3d extends GameBase {
         model4.loadModel("res/models/miku/miku_prefab.fbx", true);
         model4.modelTransform.translate(-3, -1, 2.5f).rotateY(1.2f);
 
-        lightRed.setColourValues(new Vector3f(2, 0, 0), new Vector3f(10, 0, 0), new Vector3f());
-        lightBlue.setColourValues(new Vector3f(0, 0, 2), new Vector3f(0, 0, 10), new Vector3f());
+        lightRed.setColourValues(new Vector3f(2, 0, 0), new Vector3f(5, 0, 0), new Vector3f());
+        lightBlue.setColourValues(new Vector3f(0, 0, 2), new Vector3f(0, 0, .8f), new Vector3f());
         lightGroup.addLight(lightRed, lightBlue);
 
         skyLight.diffuse = new Vector3f(.8f);

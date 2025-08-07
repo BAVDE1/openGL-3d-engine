@@ -173,7 +173,7 @@ void main() {
     colour = vec4(finalCol, 1);
 
     float brightness = dot(colour.rgb, vec3(0.2126, 0.7152, 0.0722));  // relative luminance
-    if (brightness > 1.6) brightColour = vec4(colour.rgb, 1.0);
+    if (brightness > 2) brightColour = vec4(colour.rgb, 1.0);
     else brightColour = vec4(0.0, 0.0, 0.0, 1.0);
 }
 
