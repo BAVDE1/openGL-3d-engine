@@ -17,8 +17,8 @@ public class MeshProcessorShapes {
         processVertices(model, mesh, shapesMesh);
 
         mesh.finalizeMesh();
-        model.meshes = new Mesh[] {mesh};
-        model.materials = new Material[] {material};
+        model.meshes.add(mesh);
+        if (!model.materials.contains(material)) model.materials.add(material);
     }
 
     private static void processVertices(Model model, Mesh mesh, ParShapesMesh shapesMesh) {

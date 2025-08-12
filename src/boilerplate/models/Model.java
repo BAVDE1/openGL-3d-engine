@@ -69,7 +69,11 @@ public class Model {
         }
     }
 
-    private boolean loaded = false;
+    private final int UNLOADED = 0;
+    private final int LOADED_MODEL = 1;
+    private final int LOADED_SHAPE = 2;
+    private int loaded = UNLOADED;
+
     public String modelFile;
     public String directory;
     public VertexLayout vertexLayout = defaultAssimpVertexLayout();
@@ -80,8 +84,8 @@ public class Model {
     public final NodeData rootNode = new NodeData();
     public final Matrix4f rootNodeInvTrans = new Matrix4f();
 
-    public Mesh[] meshes;
-    public Material[] materials;
+    public List<Mesh> meshes = new ArrayList<>();
+    public List<Material> materials = new ArrayList<>();
     public int boneCounter = 0;
     public final HashMap<String, Bone> boneMap = new HashMap<>();
 
@@ -103,7 +107,7 @@ public class Model {
     }
 
     public void loadModel(String filePath, boolean flipTextures) {
-        if (loaded) {
+        if (loaded != UNLOADED) {
             Logging.warn("This model has already been loaded, aborting.");
             return;
         }
@@ -141,7 +145,7 @@ public class Model {
             }
 
             MeshProcessorAssimp.processScene(this, aiScene);
-            loaded = true;
+            loaded = LOADED_MODEL;
         }
     }
 
@@ -149,15 +153,22 @@ public class Model {
         loadShape(shapesMesh, new Material());
     }
 
+    /**
+    * Reuse already loaded materials
+    */
+    public void loadShape(ParShapesMesh shapesMesh, int materialIndex) {
+        loadShape(shapesMesh, materials.get(materialIndex));
+    }
+
     public void loadShape(ParShapesMesh shapesMesh, Material material) {
-        if (loaded) {
-            Logging.warn("This model has already been loaded, aborting.");
+        if (loaded == LOADED_MODEL) {
+            Logging.warn("This model has already been loaded from a file, aborting.");
             return;
         }
 
         MeshProcessorShapes.processShape(this, shapesMesh, material);
         ParShapes.par_shapes_free_mesh(shapesMesh);
-        loaded = true;
+        loaded = LOADED_SHAPE;
     }
 
     public void pushVertexBoneIds(Mesh mesh, int vertexInx) {
@@ -263,7 +274,7 @@ public class Model {
     }
 
     public Material getMaterial(int index) {
-        return materials[index];
+        return materials.get(index);
     }
 
     public static VertexLayout defaultAssimpVertexLayout() {

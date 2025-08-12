@@ -62,8 +62,6 @@ public class Example3d extends GameBase {
     DirectionalLight skyLight = new DirectionalLight(new Vector3f(0, -1, 1));
     SpotLight spotLight = new SpotLight(camera.getPos(), camera.getForward(), 10, 12);
 
-    FrameBuffer gBuffer = new FrameBuffer(SCREEN_SIZE);
-
     FrameBuffer fb = new FrameBuffer(SCREEN_SIZE);
     FrameBuffer[] pingPongFbs = new FrameBuffer[]{new FrameBuffer(SCREEN_SIZE), new FrameBuffer(SCREEN_SIZE)};
     ShaderProgram gaussianBlurSh = new ShaderProgram();
@@ -83,7 +81,6 @@ public class Example3d extends GameBase {
     ShaderProgram displayShadowMapShader = new ShaderProgram();
     ShaderProgram shadowMapShader = new ShaderProgram();
     FrameBuffer shadowMap = new FrameBuffer(SCREEN_SIZE);
-    Matrix4f displayShadowMatrixTrans = new Matrix4f();
 
     Matrix4f pointShadowProjection;
     VertexArray vaDisplayPointShadowMap = new VertexArray();
@@ -214,16 +211,6 @@ public class Example3d extends GameBase {
         BufferBuilder2f rectData = new BufferBuilder2f(true);
         rectData.pushPolygon(Shape2d.createRect(new Vector2f(-1), new Vector2f(2)));
         vbPost.bufferData(rectData);
-
-        gBuffer.genId();
-        Texture posBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);
-        Texture normalBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);
-//        Texture tangentBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);  // todo: later
-        Texture colourSpecBuffer = FrameBuffer.setupTextureBuffer(SCREEN_SIZE, GL45.GL_RGBA16F, GL45.GL_RGBA, GL45.GL_FLOAT);
-        gBuffer.attachColourBuffer2D(posBuffer, normalBuffer, colourSpecBuffer);
-        gBuffer.drawToMultipleColourBuffers(0, 1, 2);
-        gBuffer.attachRenderBuffer(gBuffer.setupDefaultRenderBuffer());
-        gBuffer.checkCompletionOrError();
 
         fb.genId();
         FrameBuffer.RenderBuffer rb = new FrameBuffer.RenderBuffer(true);
@@ -359,6 +346,7 @@ public class Example3d extends GameBase {
         shapes[0].loadShape(ico);
         shapes[0].modelTransform = new Matrix4f().translate(-4, 0, 10);
         shapes[1].loadShape(ParShapes.par_shapes_create_cone(10, 1));
+        shapes[1].loadShape(ParShapes.par_shapes_create_cylinder(10, 1), 0);
         shapes[1].modelTransform = new Matrix4f().translate(-2, 0, 10).rotateX((float) Math.PI * -.5f);
         shapes[2].loadShape(ParShapes.par_shapes_create_hemisphere(10, 10));
         shapes[2].modelTransform = new Matrix4f().translate(0, 0, 10);

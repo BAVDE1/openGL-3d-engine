@@ -11,16 +11,17 @@ import org.lwjgl.assimp.*;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public abstract class MeshProcessorAssimp {
     public static void processScene(Model model,  AIScene rootAiScene) {
         // materials
-        model.materials = new Material[rootAiScene.mNumMaterials()];
+        model.materials = Arrays.asList(new Material[rootAiScene.mNumMaterials()]);
         processMaterials(model, rootAiScene);
 
         // node hierarchy & model
-        model.meshes = new Mesh[rootAiScene.mNumMeshes()];
+        model.meshes = Arrays.asList(new Mesh[rootAiScene.mNumMeshes()]);
         processNode(model, rootAiScene.mRootNode(), rootAiScene, model.rootNode);
         model.rootNode.transform.invert(model.rootNodeInvTrans);
 
@@ -35,7 +36,7 @@ public abstract class MeshProcessorAssimp {
 
         for (int mi = 0; mi < rootAiScene.mNumMaterials(); mi++) {
             try (AIMaterial material = AIMaterial.create(allMaterials.get(mi))) {
-                model.materials[mi] = processMaterial(model, material);
+                model.materials.set(mi, processMaterial(model, material));
             }
         }
     }
@@ -100,7 +101,7 @@ public abstract class MeshProcessorAssimp {
             while (nodeMeshes.hasRemaining()) {
                 int meshInx = nodeMeshes.get();
                 try (AIMesh aiMesh = AIMesh.create(allMeshes.get(meshInx))) {
-                    model.meshes[meshInx] = processMesh(model, aiMesh);
+                    model.meshes.set(meshInx, processMesh(model, aiMesh));
                 }
             }
         }
@@ -210,8 +211,8 @@ public abstract class MeshProcessorAssimp {
 
     private static void processMeshMaterial(Model model, Mesh mesh, AIMesh aiMesh) {
         int matInx = aiMesh.mMaterialIndex();
-        if (matInx >= 0 && matInx < model.materials.length) {
-            mesh.setMaterial(model.materials[matInx]);
+        if (matInx >= 0 && matInx < model.materials.size()) {
+            mesh.setMaterial(model.materials.get(matInx));
         }
     }
 
