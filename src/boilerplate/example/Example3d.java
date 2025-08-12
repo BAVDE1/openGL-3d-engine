@@ -26,8 +26,6 @@ import org.joml.Vector3f;
 import org.lwjgl.opengl.GL45;
 import org.lwjgl.util.par.ParShapes;
 import org.lwjgl.util.par.ParShapesMesh;
-import org.lwjgl.util.par.ParShapesRandFn;
-import org.w3c.dom.Text;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -54,9 +52,7 @@ public class Example3d extends GameBase {
     ShaderProgram shOutline = new ShaderProgram();
     ShaderProgram shLightSource = new ShaderProgram();
     VertexArray vaPost = new VertexArray();
-    VertexArray vaCube = new VertexArray();
-    VertexArrayBuffer vbPost = new VertexArrayBuffer();
-    VertexArrayBuffer vbCube = new VertexArrayBuffer();
+    Model cubeModel = new Model(Model.defaultShapeVertexLayout());
     CubeMap ballerCube = new CubeMap();
     SkyBox skyBox = new SkyBox();
 
@@ -187,19 +183,11 @@ public class Example3d extends GameBase {
     }
 
     public void setupBuffers() {
-        camera.target.y = 3;
-        camera.targetRadius = 1.5f;
-        camera.yaw = 90;
-        camera.pitch = -45;
-        camera.forceDirectionUpdate();
-
         ballerCube.genId();
         ballerCube.loadFaces("res/textures/baller.png");
         ballerCube.useNearestInterpolation();
         ballerCube.useClampEdgeWrap();
         CubeMap.unbind(0);
-        vaCube.genId();
-        vbCube.genId();
 
         shCubeMap.autoInitializeShadersMulti("shaders/3d_cube_map.glsl");
         shReflect.autoInitializeShadersMulti("shaders/3d_reflect.glsl");
@@ -209,13 +197,14 @@ public class Example3d extends GameBase {
         camera.setupUniformBuffer(shCubeMap, shReflect, shOutline, shLightSource);
         skyBox.setupBuffers(camera, "res/textures/space_skybox", "png");
 
-        vaCube.fastSetup(new int[]{3, 3}, vbCube);
-        BufferBuilder3f cubeData = new BufferBuilder3f(true, 3);
-        Shape3d.Poly3d cube = Shape3d.createCube(new Vector3f(), 1);
-        cube.mode = new ShapeMode.Unpack(Shape3d.defaultCubeNormals());
-        cubeData.pushPolygon(cube);
-        vbCube.bufferData(cubeData);
+        ParShapesMesh cube = ParShapes.par_shapes_create_cube();
+        assert cube != null;
+        ParShapes.par_shapes_translate(cube, -.5f, -.5f, -.5f);
+        ParShapes.par_shapes_unweld(cube, true);
+        ParShapes.par_shapes_compute_normals(cube);
+        cubeModel.loadShape(cube);
 
+        VertexArrayBuffer vbPost = new VertexArrayBuffer();
         shPost.autoInitializeShadersMulti("shaders/3d_post_processing.glsl");
         shPost.uniform1i("bloomOnly", 0);
         vaPost.genId();
@@ -483,8 +472,8 @@ public class Example3d extends GameBase {
         skyBox.bindSkyBoxTexture();
         shReflect.bind();
         shReflect.uniform3f("camPos", camera.getPos());
-        shReflect.uniformMatrix4f("model", matModel1.translate(2, 0, 0));
-        Renderer.drawArrays(renderWireFrame ? GL_LINES : GL_TRIANGLES, vaCube, 36);
+        cubeModel.modelTransform = matModel1.translate(2, 0, 0);
+        cubeModel.draw(shReflect, 0);
         GPUProfiler.endLog();
 
         // parallax plane
@@ -524,12 +513,12 @@ public class Example3d extends GameBase {
         // light sources
         GPUProfiler.startLog("light sources");
         shLightSource.bind();
-        shLightSource.uniformMatrix4f("model", new Matrix4f().translate(lightRed.position).scale(.3f));
         shLightSource.uniform3f("lightColour", lightRed.diffuse);
-        Renderer.drawArrays(GL_TRIANGLES, vaCube, 36);
-        shLightSource.uniformMatrix4f("model", new Matrix4f().translate(lightBlue.position).scale(.3f));
+        cubeModel.modelTransform = new Matrix4f().translate(lightRed.position).scale(.3f);
+        cubeModel.draw(shLightSource, 0);
         shLightSource.uniform3f("lightColour", lightBlue.diffuse);
-        Renderer.drawArrays(GL_TRIANGLES, vaCube, 36);
+        cubeModel.modelTransform = new Matrix4f().translate(lightBlue.position).scale(.3f);
+        cubeModel.draw(shLightSource, 0);
         GPUProfiler.endLog();
 
         skyBox.draw();
@@ -587,11 +576,10 @@ public class Example3d extends GameBase {
     }
 
     private void drawObjects(Matrix4f model1, Matrix4f model2, ShaderProgram sh) {
-        sh.uniformMatrix4f("model", model1);
-        Renderer.drawArrays(renderWireFrame ? GL_LINES : GL_TRIANGLES, vaCube, 36);
-
-        sh.uniformMatrix4f("model", model2);
-        Renderer.drawArrays(renderWireFrame ? GL_LINES : GL_TRIANGLES, vaCube, 36);
+        cubeModel.modelTransform = model1;
+        cubeModel.draw(sh, 0);
+        cubeModel.modelTransform = model2;
+        cubeModel.draw(sh, 0);
     }
 
     @Override

@@ -1,14 +1,12 @@
 package boilerplate.rendering;
 
 import boilerplate.common.BoilerplateShaders;
-import boilerplate.rendering.buffers.VertexArray;
-import boilerplate.rendering.buffers.VertexArrayBuffer;
-import boilerplate.rendering.buffers.VertexElementBuffer;
-import boilerplate.rendering.builders.BufferBuilder3f;
-import boilerplate.rendering.builders.Shape3d;
+import boilerplate.models.Model;
+import boilerplate.rendering.buffers.VertexLayout;
 import boilerplate.rendering.textures.CubeMap;
-import org.joml.Vector3f;
 import org.lwjgl.opengl.GL45;
+import org.lwjgl.util.par.ParShapes;
+import org.lwjgl.util.par.ParShapesMesh;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -16,9 +14,7 @@ public class SkyBox {
     public static String[] expectedImageNames = new String[]{"px", "nx", "py", "ny", "pz", "nz"};
 
     protected ShaderProgram sh = new ShaderProgram();
-    protected VertexArray va = new VertexArray();
-    protected VertexArrayBuffer vb = new VertexArrayBuffer();
-    protected VertexElementBuffer veb = new VertexElementBuffer(VertexElementBuffer.ELEMENT_TYPE_INT);
+    protected Model cubeModel;
     protected CubeMap skyBoxTexture = new CubeMap();
 
     protected Camera3d camera3d;
@@ -36,16 +32,13 @@ public class SkyBox {
         sh.linkProgram();
         camera3d.bindShaderToUniformBlock(sh);
 
-        va.genId();
-        vb.genId();
-        veb.genId();
-        va.fastSetup(new int[]{3}, vb, veb);
-
-        BufferBuilder3f bb = new BufferBuilder3f(true);
-        Shape3d.Poly3d poly = Shape3d.createCubeE(new Vector3f(), 1);
-        bb.pushPolygon(poly);
-        vb.bufferData(bb);
-        veb.bufferData(poly.elementIndex);
+        cubeModel = new Model(new VertexLayout(
+                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_POSITION)
+        ));
+        ParShapesMesh cube = ParShapes.par_shapes_create_cube();
+        assert cube != null;
+        ParShapes.par_shapes_translate(cube, -.5f, -.5f, -.5f);
+        cubeModel.loadShape(cube);
 
         String[] textureFileNames = new String[6];
         for (int i = 0; i < 6; i++) {
@@ -68,7 +61,7 @@ public class SkyBox {
 
         GL45.glDepthFunc(GL_LEQUAL);  // since all skybox depth (z) values are exactly maximum (1.0)
         Renderer.cullFrontFace();
-        Renderer.drawElements(GL_TRIANGLES, va, veb, 36);
+        cubeModel.draw(sh, 0);
         Renderer.cullBackFace();
         GL45.glDepthFunc(GL_LESS);
     }
