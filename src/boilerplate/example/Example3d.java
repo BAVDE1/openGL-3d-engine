@@ -19,6 +19,7 @@ import boilerplate.rendering.light.SpotLight;
 import boilerplate.rendering.textures.CubeMap;
 import boilerplate.rendering.textures.Texture;
 import boilerplate.rendering.textures.Texture2d;
+import boilerplate.utility.GPUProfiler;
 import boilerplate.utility.Logging;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;

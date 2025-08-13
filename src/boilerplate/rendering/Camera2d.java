@@ -144,7 +144,8 @@ public class Camera2d {
     }
 
     private Matrix4f generateViewMatrix() {
-        return new Matrix4f().ortho(0, captureSize.width, 0, captureSize.height, near, far).translate(pos);
+        float aspect = (float) captureSize.width / (float) captureSize.height;
+        return new Matrix4f().identity().perspective(80, aspect, near, far).translate(pos);
     }
 
 //    public void forceDirectionUpdate() {

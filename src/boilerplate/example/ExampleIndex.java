@@ -4,13 +4,17 @@ import boilerplate.common.BoilerplateConstants;
 import boilerplate.common.GameBase;
 import boilerplate.common.TimeStepper;
 import boilerplate.common.Window;
+import boilerplate.models.Model;
 import boilerplate.rendering.Camera2d;
 import boilerplate.rendering.Renderer;
+import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.text.FontManager;
 import boilerplate.rendering.text.TextRenderer;
 import boilerplate.rendering.textures.Texture2d;
 import boilerplate.utility.Logging;
 import org.joml.Vector2f;
+import org.lwjgl.util.par.ParShapes;
+import org.lwjgl.util.par.ParShapesMesh;
 
 import java.awt.*;
 
@@ -23,6 +27,9 @@ public class ExampleIndex extends GameBase {
 
     Camera2d camera = new Camera2d(new Dimension(2, 1));
     TextRenderer textRenderer = new TextRenderer();
+
+    ShaderProgram ms = new ShaderProgram();
+    Model m = new Model(Model.defaultShapeVertexLayout());
 
     boolean open2d = false;
     boolean open3d = false;
@@ -43,6 +50,13 @@ public class ExampleIndex extends GameBase {
         FontManager.init();
         FontManager.loadFont(Font.MONOSPACED, Font.BOLD, 20, true);
         FontManager.generateAndBindAllFonts(camera);
+
+        ms.autoInitializeShadersMulti("shaders/2d_shapes.glsl");
+        ParShapesMesh cube = ParShapes.par_shapes_create_cube();
+        assert cube != null;
+        ParShapes.par_shapes_unweld(cube, true);
+        ParShapes.par_shapes_compute_normals(cube);
+        m.loadShape(cube);
 
         bindEvents();
         setupBuffers();
@@ -96,6 +110,7 @@ public class ExampleIndex extends GameBase {
 
     public void render() {
         Renderer.clearCDS();
+        m.draw(ms, 0);
         textRenderer.draw();
         Renderer.finish(window);
     }

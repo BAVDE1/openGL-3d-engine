@@ -36,6 +36,7 @@ public class BoilerplateConstants {
     public static final boolean OPTIMIZE_TIME_STEPPER = true;
 
     /** <a href="https://en.wikipedia.org/wiki/Orthographic_projection">projection matrix source</a> */
+    @Deprecated
     public static float[] create2dProjectionMatrix(Dimension dimension) {
         return new float[] {
                 2f/dimension.width, 0,                    0,  -1,

@@ -1,9 +1,7 @@
-package boilerplate.common;
+package boilerplate.utility;
 
-import boilerplate.utility.Logging;
 import org.lwjgl.opengl.GL45;
 
-import java.awt.desktop.AboutEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
