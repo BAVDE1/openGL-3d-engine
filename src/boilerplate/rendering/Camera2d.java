@@ -16,7 +16,7 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class Camera2d {
     public boolean hasChangedView = true;
-//    public boolean hasChangedPerspective = true;
+    public boolean hasChangedProjection = true;
 
     protected VertexUniformBuffer vub = new VertexUniformBuffer();
     public String uniformBlockName = "CameraView";
@@ -79,10 +79,10 @@ public class Camera2d {
 
     /** Updates the perspective and the view if they have changed */
     public void updateUniformBlock() {
-//        if (hasChangedPerspective) {
-//            hasChangedPerspective = false;
-//            vub.bufferSubData(0, MathUtils.matrixToBuff(generatePerspectiveMatrix()));
-//        }
+        if (hasChangedProjection) {
+            hasChangedProjection = false;
+            vub.bufferSubData(0, MathUtils.matrixToBuff(generateOrthoMatrix()));
+        }
 
         if (hasChangedView) {
             hasChangedView = false;
@@ -144,8 +144,11 @@ public class Camera2d {
     }
 
     private Matrix4f generateViewMatrix() {
-        float aspect = (float) captureSize.width / (float) captureSize.height;
-        return new Matrix4f().identity().perspective(80, aspect, near, far).translate(pos);
+        return new Matrix4f().lookAt(pos, pos.add(new Vector3f(0, 0, 1), new Vector3f()), worldUp);
+    }
+
+    public Matrix4f generateOrthoMatrix() {
+        return new Matrix4f().identity().ortho(-2, 2, -1, 1, near, far);
     }
 
 //    public void forceDirectionUpdate() {

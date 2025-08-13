@@ -9,11 +9,12 @@ uniform mat4 model;
 out vec3 v_normal;
 
 layout (std140) uniform CameraView {
+    mat4 projection;
     mat4 view;
 };
 
 void main() {
-    gl_Position = view * (model * vec4(pos.xy, 1, 1));
+    gl_Position = projection * view * (model * vec4(pos.xyz, 1));
     v_normal = abs(mat3(model) * normal);
 }
 

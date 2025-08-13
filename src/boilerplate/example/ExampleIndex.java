@@ -6,12 +6,14 @@ import boilerplate.common.TimeStepper;
 import boilerplate.common.Window;
 import boilerplate.models.Model;
 import boilerplate.rendering.Camera2d;
+import boilerplate.rendering.Camera3d;
 import boilerplate.rendering.Renderer;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.text.FontManager;
 import boilerplate.rendering.text.TextRenderer;
 import boilerplate.rendering.textures.Texture2d;
 import boilerplate.utility.Logging;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.lwjgl.util.par.ParShapes;
 import org.lwjgl.util.par.ParShapesMesh;
@@ -25,7 +27,7 @@ public class ExampleIndex extends GameBase {
     public boilerplate.common.Window window = new Window();
     final Dimension SCREEN_SIZE = new Dimension(500, 250);
 
-    Camera2d camera = new Camera2d(new Dimension(2, 1));
+    Camera2d camera = new Camera2d(SCREEN_SIZE);
     TextRenderer textRenderer = new TextRenderer();
 
     ShaderProgram ms = new ShaderProgram();
@@ -110,6 +112,8 @@ public class ExampleIndex extends GameBase {
 
     public void render() {
         Renderer.clearCDS();
+        Renderer.enableDepthTest();
+        m.modelTransform = new Matrix4f().identity().translate(0, 0, 5).rotateY( (float) (Math.PI * Math.sin(glfwGetTime())));
         m.draw(ms, 0);
         textRenderer.draw();
         Renderer.finish(window);
@@ -118,6 +122,7 @@ public class ExampleIndex extends GameBase {
     @Override
     public void mainLoop(double dt) {
         glfwPollEvents();
+        camera.updateUniformBlock();
         render();
     }
 

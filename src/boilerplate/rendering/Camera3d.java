@@ -20,7 +20,7 @@ public class Camera3d {
 
     protected int mode;
     public boolean hasChangedView = true;
-    public boolean hasChangedPerspective = true;
+    public boolean hasChangedProjection = true;
 
     protected VertexUniformBuffer vub = new VertexUniformBuffer();
     public String uniformBlockName = "CameraView";
@@ -122,8 +122,8 @@ public class Camera3d {
 
     /** Updates the perspective and the view if they have changed */
     public void updateUniformBlock() {
-        if (hasChangedPerspective) {
-            hasChangedPerspective = false;
+        if (hasChangedProjection) {
+            hasChangedProjection = false;
             vub.bufferSubData(0, MathUtils.matrixToBuff(generatePerspectiveMatrix()));
         }
 

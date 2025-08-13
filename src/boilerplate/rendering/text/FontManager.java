@@ -2,6 +2,7 @@ package boilerplate.rendering.text;
 
 import boilerplate.common.BoilerplateShaders;
 import boilerplate.rendering.Camera2d;
+import boilerplate.rendering.Camera3d;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.buffers.VertexLayout;
 import boilerplate.rendering.textures.Texture2d;
