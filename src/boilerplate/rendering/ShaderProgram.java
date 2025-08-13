@@ -298,27 +298,6 @@ public class ShaderProgram {
         glUniform1i(getUniformLocation(uniform), val ? 1 : 0);
     }
 
-    @Deprecated
-    public void uniformResolutionData(Dimension screenSize, float[] projectionMatrix) {
-        uniform2f("resolution", screenSize.width, screenSize.height);
-        uniformMatrix4f("projectionMatrix", projectionMatrix);
-    }
-
-    @Deprecated
-    public void useDemoShader() {
-        autoInitializeShadersMulti("shaders/demo.glsl");
-    }
-
-    @Deprecated
-    public void useTextShader() {
-        autoInitializeShadersMulti("shaders/text.glsl");
-    }
-
-    @Deprecated
-    public void useCircleShader() {
-        autoInitializeShadersMulti("shaders/circle.glsl");
-    }
-
     public boolean isSetup() {
         return program != null;
     }

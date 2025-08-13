@@ -69,6 +69,7 @@ public class Image {
         Image image = new Image();
         image.width = bufferedImage.getWidth();
         image.height = bufferedImage.getHeight();
+        image.channels = 4;
 
         // get all pixels
         int[] pixels = new int[image.width * image.height];

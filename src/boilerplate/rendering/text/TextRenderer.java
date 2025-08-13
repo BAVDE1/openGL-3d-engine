@@ -5,7 +5,6 @@ import boilerplate.rendering.buffers.VertexArray;
 import boilerplate.rendering.buffers.VertexArrayBuffer;
 import boilerplate.rendering.builders.BufferBuilder2f;
 import boilerplate.rendering.builders.Shape2d;
-import boilerplate.rendering.*;
 import boilerplate.rendering.builders.ShapeMode;
 import boilerplate.utility.Logging;
 import org.joml.Vector2f;
@@ -252,8 +251,8 @@ public class TextRenderer {
         if (hasBeenModified) buildBuffer();
 
         if (sb.getFloatCount() > 0) {
-            FontManager.bindTextShader();
-            Renderer.drawArrays(GL_TRIANGLE_STRIP, va, sb.getVertexCount());
+            FontManager.bindText2dShader();
+            va.drawArrays(GL_TRIANGLE_STRIP, sb.getVertexCount());
         }
     }
 

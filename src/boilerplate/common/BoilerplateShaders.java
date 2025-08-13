@@ -7,6 +7,43 @@ public class BoilerplateShaders {
         return safeCode.replaceAll("~~~~", ignore);
     }
 
+    public static String Text2DVertex = """
+            #version 450 core
+            
+            layout(location = 0) in vec2 pos;
+            layout(location = 1) in vec2 texturePos;
+            layout(location = 2) in vec4 texColour;
+            
+            layout (std140) uniform %s {
+                mat4 view;
+            };
+            
+            out vec2 v_texturePos;
+            out vec4 v_texColour;
+            
+            void main() {
+                gl_Position = view * vec4(pos.xy, 1, 1);
+                v_texturePos = texturePos;
+                v_texColour = texColour;
+            }
+            """;
+
+    public static String Text2DFragment = """
+            #version 450 core
+            
+            uniform sampler2D fontTexture;
+            
+            in vec2 v_texturePos;
+            in vec4 v_texColour;
+            
+            out vec4 colour;
+            
+            void main() {
+                float alpha = v_texturePos.x > -1 ? texture(fontTexture, v_texturePos.xy).a : 1;
+                colour = (v_texColour * alpha) / 255;
+            }
+            """;
+
     public static String SkyBoxVertex = """
             #version 450 core
             

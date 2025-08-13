@@ -81,7 +81,7 @@ public class Example2d extends GameBase {
 
         FontManager.init();
         FontManager.loadFont(Font.MONOSPACED, Font.BOLD, 14, true);
-        FontManager.generateAndBindAllFonts(SCREEN_SIZE, BoilerplateConstants.create2dProjectionMatrix(SCREEN_SIZE));
+        FontManager.generateAndBindAllFonts(null);
 
         bindEvents();
         setupShaders();
@@ -190,15 +190,15 @@ public class Example2d extends GameBase {
 
     /** Must be called after window is visible */
     public void setupShaders() {
-        shMain.useDemoShader();
-        shCircles.useCircleShader();
+//        shMain.useDemoShader();
+//        shCircles.useCircleShader();
 
         new Texture2d("textures/explosion.png").bindToTexArray(2, shMain);
         new Texture2d("textures/closed.png").bindToTexArray(3, shMain);
 
-        shMain.uniformResolutionData(SCREEN_SIZE, PROJECTION_MATRIX);
+//        shMain.uniformResolutionData(SCREEN_SIZE, PROJECTION_MATRIX);
         shMain.uniform1f("viewScale", viewScale);
-        shCircles.uniformResolutionData(SCREEN_SIZE, PROJECTION_MATRIX);
+//        shCircles.uniformResolutionData(SCREEN_SIZE, PROJECTION_MATRIX);
         shCircles.uniform1f("viewScale", viewScale);
     }
 
@@ -284,12 +284,12 @@ public class Example2d extends GameBase {
         // shape examples & textures
         shMain.bind();
         shMain.uniform1f("time", (float) glfwGetTime());
-        Renderer.drawArrays(debugMode ? GL_LINE_STRIP : GL_TRIANGLE_STRIP, vaMain, builderMain.getVertexCount());
+        vaMain.drawArrays(debugMode ? GL_LINE_STRIP : GL_TRIANGLE_STRIP, builderCircles.getVertexCount());
 
         shCircles.bind();
-        Renderer.drawInstanced(GL_TRIANGLES, vaCircles, 3, builderCircles.getVertexCount());
+        vaCircles.drawInstanced(GL_TRIANGLES, 3, builderCircles.getVertexCount());
 
-        Renderer.drawText(textRenderer);
+        textRenderer.draw();
 
         // FINISH
         Renderer.finish(window);

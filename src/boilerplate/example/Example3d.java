@@ -528,7 +528,7 @@ public class Example3d extends GameBase {
                 fb.intermediaryFB.colourBuffers.get(1).bind();
                 firstIter = false;
             } else pingPongFbs[1 - inx].colourBuffers.getFirst().bind();
-            Renderer.drawArrays(GL_TRIANGLE_STRIP, vaPost, 4);
+            vaPost.drawArrays(GL_TRIANGLE_STRIP, 4);
         }
         GPUProfiler.endLog();
 
@@ -541,23 +541,23 @@ public class Example3d extends GameBase {
         shPost.bind();
         shPost.uniformTexture("screenTexture", fb.intermediaryFB.colourBuffers.getFirst(), 0);
         shPost.uniformTexture("bloomTexture", pingPongFbs[1 - (gaussianAmount % 2)].colourBuffers.getFirst(), 1);
-        Renderer.drawArrays(GL_TRIANGLE_STRIP, vaPost, 4);
+        vaPost.drawArrays(GL_TRIANGLE_STRIP, 4);
         GL45.glActiveTexture(GL45.GL_TEXTURE0);
         GPUProfiler.endLog();
 
         // debug shadow map
         displayShadowMapShader.bind();
         shadowMap.depthBuffer.bind();
-        Renderer.drawArrays(GL_TRIANGLE_STRIP, vaDisplayShadowMap, 4);
+        vaDisplayShadowMap.drawArrays(GL_TRIANGLE_STRIP, 4);
 
         displayPointShadowMapShader.bind();
         displayPointShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.875f, .5f, 0).scale(.125f));
         pointShadowMaps.getFirst().depthBuffer.bind();
-        Renderer.drawArrays(GL_TRIANGLE_STRIP, vaDisplayPointShadowMap, 4);
+        vaDisplayPointShadowMap.drawArrays(GL_TRIANGLE_STRIP, 4);
 
         displayPointShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.875f, .25f, 0).scale(.125f));
         pointShadowMaps.get(1).depthBuffer.bind();
-        Renderer.drawArrays(GL_TRIANGLE_STRIP, vaDisplayPointShadowMap, 4);
+        vaDisplayPointShadowMap.drawArrays(GL_TRIANGLE_STRIP, 4);
 
         Renderer.finish(window);
         GPUProfiler.endFrame();

@@ -86,4 +86,28 @@ public class VertexArray {
     public int getId() {
         return arrayId;
     }
+
+    public void drawArrays(int mode, int vertexCount) {
+        bind();
+        glDrawArrays(mode, 0, vertexCount);
+    }
+
+    public void drawInstanced(int mode, int vertsPerInstance, int instanceCount) {
+        bind();
+        glDrawArraysInstanced(mode, 0, vertsPerInstance, instanceCount);
+    }
+
+    public void drawElements(int mode, VertexElementBuffer veb, int vertexCount) {
+        drawElements(mode, veb.getElementType(), vertexCount);
+    }
+
+    public void drawElementsBaseVertex(int mode, VertexElementBuffer veb, int vertexCount, int baseIndice, int baseVertex) {
+        bind();
+        glDrawElementsBaseVertex(mode, vertexCount, veb.getElementType(), (long) Integer.BYTES * baseIndice, baseVertex);
+    }
+
+    public void drawElements(int mode, int elementType, int vertexCount) {
+        bind();
+        glDrawElements(mode, vertexCount, elementType, 0);
+    }
 }

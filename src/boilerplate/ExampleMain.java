@@ -12,6 +12,6 @@ public class ExampleMain {
         System.setProperty("joml.format", "false");  // stop it
         Logging.setupFileLogging(BoilerplateConstants.LOGGING_FILE_NAME);
         Logging.mystical("Starting example program");
-        new Example3d().start();
+        new ExampleIndex().start();
     }
 }

@@ -15,20 +15,6 @@ import java.util.Arrays;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Camera3d {
-    public static class Action {
-        public interface Func {
-            void call(float speed);
-        }
-
-        public int key;
-        Func callback;
-
-        public Action(int key, Func actionFunc) {
-            this.key = key;
-            this.callback = actionFunc;
-        }
-    }
-
     public static final int MODE_FLY = 0;
     public static final int MODE_TARGET = 1;
 
@@ -72,23 +58,23 @@ public class Camera3d {
     private Vector2f mousePosOnClick;
     private Vector2f prevMousePos;  // for wayland
 
-    ArrayList<Action> keyMovementActions = new ArrayList<>(Arrays.asList(
-            new Action(GLFW_KEY_W, speed -> pos.add(forward.mul(speed, new Vector3f()))),
-            new Action(GLFW_KEY_S, speed -> pos.sub(forward.mul(speed, new Vector3f()))),
-            new Action(GLFW_KEY_D, speed -> pos.add(right.mul(speed, new Vector3f()))),
-            new Action(GLFW_KEY_A, speed -> pos.sub(right.mul(speed, new Vector3f()))),
-            new Action(GLFW_KEY_E, speed -> pos.add(up.mul(speed, new Vector3f()))),
-            new Action(GLFW_KEY_Q, speed -> pos.sub(up.mul(speed, new Vector3f()))),
-            new Action(GLFW_KEY_SPACE, speed -> pos.add(0, speed, 0)),
-            new Action(GLFW_KEY_LEFT_CONTROL, speed -> pos.sub(0, speed, 0))
+    ArrayList<CameraAction> keyMovementActions = new ArrayList<>(Arrays.asList(
+            new CameraAction(GLFW_KEY_W, speed -> pos.add(forward.mul(speed, new Vector3f()))),
+            new CameraAction(GLFW_KEY_S, speed -> pos.sub(forward.mul(speed, new Vector3f()))),
+            new CameraAction(GLFW_KEY_D, speed -> pos.add(right.mul(speed, new Vector3f()))),
+            new CameraAction(GLFW_KEY_A, speed -> pos.sub(right.mul(speed, new Vector3f()))),
+            new CameraAction(GLFW_KEY_E, speed -> pos.add(up.mul(speed, new Vector3f()))),
+            new CameraAction(GLFW_KEY_Q, speed -> pos.sub(up.mul(speed, new Vector3f()))),
+            new CameraAction(GLFW_KEY_SPACE, speed -> pos.add(0, speed, 0)),
+            new CameraAction(GLFW_KEY_LEFT_CONTROL, speed -> pos.sub(0, speed, 0))
     ));
-    ArrayList<Action> keyRotationActions = new ArrayList<>(Arrays.asList(
-            new Action(GLFW_KEY_UP, speed -> pitch += speed),
-            new Action(GLFW_KEY_DOWN, speed -> pitch -= speed),
-            new Action(GLFW_KEY_RIGHT, speed -> yaw += speed),
-            new Action(GLFW_KEY_LEFT, speed -> yaw -= speed),
-            new Action(GLFW_KEY_P, speed -> roll += speed),
-            new Action(GLFW_KEY_O, speed -> roll -= speed)
+    ArrayList<CameraAction> keyRotationActions = new ArrayList<>(Arrays.asList(
+            new CameraAction(GLFW_KEY_UP, speed -> pitch += speed),
+            new CameraAction(GLFW_KEY_DOWN, speed -> pitch -= speed),
+            new CameraAction(GLFW_KEY_RIGHT, speed -> yaw += speed),
+            new CameraAction(GLFW_KEY_LEFT, speed -> yaw -= speed),
+            new CameraAction(GLFW_KEY_P, speed -> roll += speed),
+            new CameraAction(GLFW_KEY_O, speed -> roll -= speed)
     ));
 
     public Camera3d(Dimension aspectSize, int mode) {
@@ -117,7 +103,6 @@ public class Camera3d {
     }
 
     public void setupUniformBuffer(ShaderProgram... shadersToBind) {
-
         if (vub.getId() != -1) {
             Logging.danger("Uniform buffer has already been setup. Call `bindShaderToUniformBlock` to bind more shaders.");
             return;
@@ -154,7 +139,7 @@ public class Camera3d {
 
         // rotation
         float rSpeed = rotSpeed * speedMul * (float) dt;
-        for (Action action : keyRotationActions) {
+        for (CameraAction action : keyRotationActions) {
             if (window.isKeyPressed(action.key)) {
                 action.callback.call(rSpeed);
                 rotUpdated = true;
@@ -167,7 +152,7 @@ public class Camera3d {
         // movement
         if (mode == MODE_FLY) {
             float mSpeed = moveSpeed * speedMul * (float) dt;
-            for (Action action : keyMovementActions) {
+            for (CameraAction action : keyMovementActions) {
                 if (window.isKeyPressed(action.key)) {
                     action.callback.call(mSpeed);
                     hasChangedView = true;

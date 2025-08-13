@@ -125,6 +125,6 @@ public class Mesh {
             material.uniformValues("material", sh);
             material.uniformAndBindTextures("material", sh, textureSlotStart);
         }
-        Renderer.drawElements(renderMode, va, veb, indicesCount);
+        va.drawElements(renderMode, veb, indicesCount);
     }
 }

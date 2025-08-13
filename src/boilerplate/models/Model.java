@@ -192,8 +192,8 @@ public class Model {
 
         if (!boneShader.isSetup()) {
             boneShader.genProgram();
-            boneShader.attachShader(BoilerplateShaders.safeFormat(BoilerplateShaders.ModelBoneVertex, "% ", camera3d.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders class, ModelBoneVertex");
-            boneShader.attachShader(BoilerplateShaders.ModelBoneFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders class, ModelBoneFragment");
+            boneShader.attachShader(BoilerplateShaders.safeFormat(BoilerplateShaders.ModelBoneVertex, "% ", camera3d.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.ModelBoneVertex");
+            boneShader.attachShader(BoilerplateShaders.ModelBoneFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders.ModelBoneFragment");
             boneShader.linkProgram();
             camera3d.bindShaderToUniformBlock(boneShader);
             boneShader.unbind();
@@ -242,7 +242,7 @@ public class Model {
         GL45.glPointSize(10);
         boneShader.bind();
         GL45.glDepthFunc(GL45.GL_ALWAYS);
-        Renderer.drawArrays(GL45.GL_POINTS, boneVa, boneMap.size());
+        boneVa.drawArrays(GL45.GL_POINTS, boneMap.size());
         GL45.glDepthFunc(GL45.GL_LESS);
         boneShader.unbind();
         GL45.glPointSize(1);

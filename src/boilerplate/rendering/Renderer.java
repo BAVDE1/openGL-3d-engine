@@ -162,34 +162,6 @@ public class Renderer {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    public static void drawArrays(int mode, VertexArray va, int vertexCount) {
-        va.bind();
-        glDrawArrays(mode, 0, vertexCount);
-    }
-
-    public static void drawInstanced(int mode, VertexArray va, int vertsPerInstance, int instanceCount) {
-        va.bind();
-        glDrawArraysInstanced(mode, 0, vertsPerInstance, instanceCount);
-    }
-
-    public static void drawElements(int mode, VertexArray va, VertexElementBuffer veb, int vertexCount) {
-        drawElements(mode, va, veb.getElementType(), vertexCount);
-    }
-
-    public static void drawElementsBaseVertex(int mode, VertexArray va, VertexElementBuffer veb, int vertexCount, int baseIndice, int baseVertex) {
-        va.bind();
-        glDrawElementsBaseVertex(mode, vertexCount, veb.getElementType(), (long) Integer.BYTES * baseIndice, baseVertex);
-    }
-
-    public static void drawElements(int mode, VertexArray va, int elementType, int vertexCount) {
-        va.bind();
-        glDrawElements(mode, vertexCount, elementType, 0);
-    }
-
-    public static void drawText(TextRenderer tr) {
-        tr.draw();
-    }
-
     public static void finish(Window window) {
         glfwSwapBuffers(window.handle);
     }

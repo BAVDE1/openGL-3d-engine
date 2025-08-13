@@ -4,6 +4,7 @@ import boilerplate.common.BoilerplateConstants;
 import boilerplate.common.GameBase;
 import boilerplate.common.TimeStepper;
 import boilerplate.common.Window;
+import boilerplate.rendering.Camera2d;
 import boilerplate.rendering.Renderer;
 import boilerplate.rendering.text.FontManager;
 import boilerplate.rendering.text.TextRenderer;
@@ -18,7 +19,9 @@ import static org.lwjgl.opengl.GL45.glDebugMessageCallback;
 
 public class ExampleIndex extends GameBase {
     public boilerplate.common.Window window = new Window();
-    final Dimension SCREEN_SIZE = new Dimension(500, 200);
+    final Dimension SCREEN_SIZE = new Dimension(500, 250);
+
+    Camera2d camera = new Camera2d(new Dimension(2, 1));
     TextRenderer textRenderer = new TextRenderer();
 
     boolean open2d = false;
@@ -36,9 +39,10 @@ public class ExampleIndex extends GameBase {
         winOps.initWindowSize = SCREEN_SIZE;
         window.quickSetupAndShow(winOps);
 
+        camera.setupUniformBuffer();
         FontManager.init();
         FontManager.loadFont(Font.MONOSPACED, Font.BOLD, 20, true);
-        FontManager.generateAndBindAllFonts(SCREEN_SIZE, BoilerplateConstants.create2dProjectionMatrix(SCREEN_SIZE));
+        FontManager.generateAndBindAllFonts(camera);
 
         bindEvents();
         setupBuffers();
@@ -92,7 +96,7 @@ public class ExampleIndex extends GameBase {
 
     public void render() {
         Renderer.clearCDS();
-        Renderer.drawText(textRenderer);
+        textRenderer.draw();
         Renderer.finish(window);
     }
 

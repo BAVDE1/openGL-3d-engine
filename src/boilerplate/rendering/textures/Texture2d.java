@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL45.glBindTextureUnit;
 
 public class Texture2d extends Texture {
@@ -118,6 +119,7 @@ public class Texture2d extends Texture {
     public static void deleteAll() {
         for (int id : boundSlots.values()) glDeleteTextures(id);
         boundSlots.clear();
+        glActiveTexture(GL_TEXTURE0);
     }
 
     /**

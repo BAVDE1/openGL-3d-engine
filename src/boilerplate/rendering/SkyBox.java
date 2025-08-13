@@ -27,8 +27,8 @@ public class SkyBox {
         this.camera3d = camera3d;
 
         sh.genProgram();
-        sh.attachShader(String.format(BoilerplateShaders.SkyBoxVertex, camera3d.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders class, SkyBoxVertex");
-        sh.attachShader(BoilerplateShaders.SkyBoxFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders class, SkyBoxFragment");
+        sh.attachShader(String.format(BoilerplateShaders.SkyBoxVertex, camera3d.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.SkyBoxVertex");
+        sh.attachShader(BoilerplateShaders.SkyBoxFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders.SkyBoxFragment");
         sh.linkProgram();
         camera3d.bindShaderToUniformBlock(sh);
 
