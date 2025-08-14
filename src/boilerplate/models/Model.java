@@ -1,7 +1,7 @@
 package boilerplate.models;
 
 import boilerplate.common.BoilerplateShaders;
-import boilerplate.rendering.CameraPerspective;
+import boilerplate.rendering.camera.CameraPerspective;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.buffers.VertexArray;
 import boilerplate.rendering.buffers.VertexArrayBuffer;

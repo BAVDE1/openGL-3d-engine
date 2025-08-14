@@ -3,6 +3,7 @@ package boilerplate.rendering;
 import boilerplate.common.BoilerplateShaders;
 import boilerplate.models.Model;
 import boilerplate.rendering.buffers.VertexLayout;
+import boilerplate.rendering.camera.CameraPerspective;
 import boilerplate.rendering.textures.CubeMap;
 import org.lwjgl.opengl.GL45;
 import org.lwjgl.util.par.ParShapes;

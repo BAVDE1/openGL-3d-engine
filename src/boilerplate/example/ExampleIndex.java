@@ -5,7 +5,7 @@ import boilerplate.common.GameBase;
 import boilerplate.common.TimeStepper;
 import boilerplate.common.Window;
 import boilerplate.models.Model;
-import boilerplate.rendering.CameraOrtho;
+import boilerplate.rendering.camera.CameraOrtho;
 import boilerplate.rendering.Renderer;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.text.FontManager;
@@ -55,6 +55,7 @@ public class ExampleIndex extends GameBase {
         ms.autoInitializeShadersMulti("shaders/2d_shapes.glsl");
         ParShapesMesh cube = ParShapes.par_shapes_create_cube();
         assert cube != null;
+        ParShapes.par_shapes_translate(cube, -.5f, -.5f, -.5f);
         ParShapes.par_shapes_unweld(cube, true);
         ParShapes.par_shapes_compute_normals(cube);
         m.loadShape(cube);
@@ -117,7 +118,8 @@ public class ExampleIndex extends GameBase {
     public void render() {
         Renderer.clearCDS();
         Renderer.enableDepthTest();
-        m.modelTransform = new Matrix4f().identity().translate(0, 0, 5).rotateY( (float) (Math.PI * Math.sin(glfwGetTime())));
+        Renderer.enableFaceCulling();
+        m.modelTransform = new Matrix4f().identity().translate(0, 0, 10).rotateX(-.3f).rotateY((float) (Math.PI * glfwGetTime() * .6f));
         m.draw(ms, 0);
         textRenderer.draw();
         Renderer.finish(window);

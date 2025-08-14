@@ -1,5 +1,6 @@
-package boilerplate.rendering;
+package boilerplate.rendering.camera;
 
+import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.buffers.VertexUniformBuffer;
 import boilerplate.utility.Logging;
 import boilerplate.utility.MathUtils;

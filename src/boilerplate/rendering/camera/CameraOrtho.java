@@ -1,4 +1,4 @@
-package boilerplate.rendering;
+package boilerplate.rendering.camera;
 
 import boilerplate.common.Window;
 import org.joml.Matrix4f;
@@ -14,7 +14,7 @@ import static org.lwjgl.glfw.GLFW.*;
 public class CameraOrtho extends Camera {
     // view
     protected Vector3f up = new Vector3f(worldUp);
-    protected Vector3f forward = new Vector3f(0, -1, 1);
+    protected Vector3f forward = new Vector3f(0, 0, 1);
 
     // controls
     public float moveSpeed = 3;
@@ -28,8 +28,8 @@ public class CameraOrtho extends Camera {
     ArrayList<CameraKeyAction> keyViewActions = new ArrayList<>(Arrays.asList(
             new CameraKeyAction(GLFW_KEY_W, speed -> pos.add(up.mul(speed, new Vector3f()))),
             new CameraKeyAction(GLFW_KEY_S, speed -> pos.sub(up.mul(speed, new Vector3f()))),
-            new CameraKeyAction(GLFW_KEY_D, speed -> pos.sub(up.cross(forward, new Vector3f()).mul(speed))),
             new CameraKeyAction(GLFW_KEY_A, speed -> pos.add(up.cross(forward, new Vector3f()).mul(speed))),
+            new CameraKeyAction(GLFW_KEY_D, speed -> pos.sub(up.cross(forward, new Vector3f()).mul(speed))),
             new CameraKeyAction(GLFW_KEY_E, speed -> up.rotateAxis(speed, forward.x, forward.y, forward.z)),
             new CameraKeyAction(GLFW_KEY_Q, speed -> up.rotateAxis(-speed, forward.x, forward.y, forward.z))
     ));

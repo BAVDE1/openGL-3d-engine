@@ -3,7 +3,7 @@ package boilerplate.example;
 import boilerplate.common.*;
 import boilerplate.common.Window;
 import boilerplate.models.Model;
-import boilerplate.rendering.CameraPerspective;
+import boilerplate.rendering.camera.CameraPerspective;
 import boilerplate.rendering.Renderer;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.SkyBox;

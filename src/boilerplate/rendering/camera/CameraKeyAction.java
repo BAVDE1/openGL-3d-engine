@@ -1,4 +1,4 @@
-package boilerplate.rendering;
+package boilerplate.rendering.camera;
 
 public class CameraKeyAction {
     public interface Func {

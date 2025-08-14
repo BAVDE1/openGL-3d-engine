@@ -1,7 +1,7 @@
 package boilerplate.rendering.text;
 
 import boilerplate.common.BoilerplateShaders;
-import boilerplate.rendering.CameraOrtho;
+import boilerplate.rendering.camera.CameraOrtho;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.buffers.VertexLayout;
 import boilerplate.rendering.textures.Texture2d;

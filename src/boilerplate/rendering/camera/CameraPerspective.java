@@ -1,9 +1,7 @@
-package boilerplate.rendering;
+package boilerplate.rendering.camera;
 
 import boilerplate.common.Window;
-import boilerplate.rendering.buffers.VertexUniformBuffer;
 import boilerplate.utility.Logging;
-import boilerplate.utility.MathUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
