@@ -1,6 +1,6 @@
 package boilerplate.rendering;
 
-public class CameraAction {
+public class CameraKeyAction {
     public interface Func {
         void call(float speed);
     }
@@ -8,7 +8,7 @@ public class CameraAction {
     public int key;
     Func callback;
 
-    public CameraAction(int key, Func actionFunc) {
+    public CameraKeyAction(int key, Func actionFunc) {
         this.key = key;
         this.callback = actionFunc;
     }

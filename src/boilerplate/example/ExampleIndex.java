@@ -5,8 +5,7 @@ import boilerplate.common.GameBase;
 import boilerplate.common.TimeStepper;
 import boilerplate.common.Window;
 import boilerplate.models.Model;
-import boilerplate.rendering.Camera2d;
-import boilerplate.rendering.Camera3d;
+import boilerplate.rendering.CameraOrtho;
 import boilerplate.rendering.Renderer;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.text.FontManager;
@@ -25,9 +24,9 @@ import static org.lwjgl.opengl.GL45.glDebugMessageCallback;
 
 public class ExampleIndex extends GameBase {
     public boilerplate.common.Window window = new Window();
-    final Dimension SCREEN_SIZE = new Dimension(500, 250);
+    final Dimension SCREEN_SIZE = new Dimension(500, 500);
 
-    Camera2d camera = new Camera2d(SCREEN_SIZE);
+    CameraOrtho camera = new CameraOrtho(new Dimension(5, 5));
     TextRenderer textRenderer = new TextRenderer();
 
     ShaderProgram ms = new ShaderProgram();
@@ -70,11 +69,11 @@ public class ExampleIndex extends GameBase {
         glfwSetKeyCallback(window.handle, (window, key, scancode, action, mods) -> {
             if (action == GLFW_PRESS) {
                 if (key == GLFW_KEY_ESCAPE) this.window.setToClose();
-                if (key == GLFW_KEY_Q) {
+                if (key == GLFW_KEY_O) {
                     open2d = true;
                     this.window.setToClose();
                 }
-                if (key == GLFW_KEY_E) {
+                if (key == GLFW_KEY_P) {
                      open3d = true;
                      this.window.setToClose();
                 }
@@ -110,6 +109,11 @@ public class ExampleIndex extends GameBase {
         new Example3d().start();
     }
 
+    public void update(double dt) {
+        camera.processKeyInputs(window, dt);
+        camera.updateUniformBlock();
+    }
+
     public void render() {
         Renderer.clearCDS();
         Renderer.enableDepthTest();
@@ -122,7 +126,7 @@ public class ExampleIndex extends GameBase {
     @Override
     public void mainLoop(double dt) {
         glfwPollEvents();
-        camera.updateUniformBlock();
+        update(dt);
         render();
     }
 

@@ -1,8 +1,7 @@
 package boilerplate.rendering.text;
 
 import boilerplate.common.BoilerplateShaders;
-import boilerplate.rendering.Camera2d;
-import boilerplate.rendering.Camera3d;
+import boilerplate.rendering.CameraOrtho;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.buffers.VertexLayout;
 import boilerplate.rendering.textures.Texture2d;
@@ -236,7 +235,7 @@ public class FontManager {
     }
 
     /** generate all font images onto one universal image atlas at their y offsets */
-    public static void generateAndBindAllFonts(Camera2d camera2d) {
+    public static void generateAndBindAllFonts(CameraOrtho camera2d) {
         BufferedImage fullImage = new BufferedImage(fullWidth, fullHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = fullImage.createGraphics();
 
@@ -257,7 +256,7 @@ public class FontManager {
         if (writeFontsToFile) Texture2d.writeToFile(fullImage);
     }
 
-    private static void setupTextShader2d(Camera2d camera2d) {
+    private static void setupTextShader2d(CameraOrtho camera2d) {
         textShader2d.genProgram();
         textShader2d.attachShader(String.format(BoilerplateShaders.Text2DVertex, camera2d.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.Text2DVertex");
         textShader2d.attachShader(BoilerplateShaders.Text2DFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders.Text2DFragment");

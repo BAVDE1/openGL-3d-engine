@@ -14,7 +14,7 @@ import java.util.Arrays;
 
 import static org.lwjgl.glfw.GLFW.*;
 
-public class Camera2d {
+public class CameraOrtho {
     public boolean hasChangedView = true;
     public boolean hasChangedProjection = true;
 
@@ -30,6 +30,8 @@ public class Camera2d {
     // view
     public Vector3f pos = new Vector3f();
     public Vector3f worldUp = new Vector3f(0, 1, 0);
+    protected Vector3f forward = new Vector3f(0, 0, 1);
+    protected Vector3f up = new Vector3f(worldUp);
 
     // controls
     public float moveSpeed = 3;
@@ -40,23 +42,23 @@ public class Camera2d {
     private Vector2f mousePosOnClick;
     private Vector2f prevMousePos;  // for wayland
 
-    ArrayList<CameraAction> keyMovementActions = new ArrayList<>(Arrays.asList(
-            new CameraAction(GLFW_KEY_W, speed -> pos.y += speed),
-            new CameraAction(GLFW_KEY_S, speed -> pos.y -= speed),
-            new CameraAction(GLFW_KEY_D, speed -> pos.x += speed),
-            new CameraAction(GLFW_KEY_A, speed -> pos.x -= speed)
+    ArrayList<CameraKeyAction> keyMovementActions = new ArrayList<>(Arrays.asList(
+            new CameraKeyAction(GLFW_KEY_W, speed -> pos.add(up.mul(speed, new Vector3f()))),
+            new CameraKeyAction(GLFW_KEY_S, speed -> pos.sub(up.mul(speed, new Vector3f()))),
+            new CameraKeyAction(GLFW_KEY_D, speed -> pos.sub(up.cross(forward, new Vector3f()).mul(speed))),
+            new CameraKeyAction(GLFW_KEY_A, speed -> pos.add(up.cross(forward, new Vector3f()).mul(speed))),
+            new CameraKeyAction(GLFW_KEY_E, speed -> up.rotateAxis(speed, forward.x, forward.y, forward.z)),
+            new CameraKeyAction(GLFW_KEY_Q, speed -> up.rotateAxis(-speed, forward.x, forward.y, forward.z))
     ));
-    ArrayList<CameraAction> keyRotationActions = new ArrayList<>();
+    ArrayList<CameraKeyAction> keyRotationActions = new ArrayList<>();
 
-    public Camera2d(Dimension aspectSize) {
+    public CameraOrtho(Dimension aspectSize) {
         this.captureSize = aspectSize;
-//        calculateDirections();
     }
 
-    public Camera2d(Dimension aspectSize, Vector3f initialPos) {
+    public CameraOrtho(Dimension aspectSize, Vector3f initialPos) {
         this(aspectSize);
         pos = new Vector3f(initialPos);
-//        calculateDirections();
     }
 
     public void setupUniformBuffer(ShaderProgram... shadersToBind) {
@@ -92,23 +94,10 @@ public class Camera2d {
 
     public void processKeyInputs(Window window, double dt) {
         float speedMul = window.isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 3 : (window.isKeyPressed(GLFW_KEY_LEFT_ALT) ? .3f : 1);
-//        boolean rotUpdated = false;
-
-        // rotation
-//        float rSpeed = rotSpeed * speedMul * (float) dt;
-//        for (Action action : keyRotationActions) {
-//            if (window.isKeyPressed(action.key)) {
-//                action.callback.call(rSpeed);
-//                rotUpdated = true;
-//                hasChangedView = true;
-//            }
-//        }
-
-//        if (rotUpdated) calculateDirections();
 
         // movement
         float mSpeed = moveSpeed * speedMul * (float) dt;
-        for (CameraAction action : keyMovementActions) {
+        for (CameraKeyAction action : keyMovementActions) {
             if (window.isKeyPressed(action.key)) {
                 action.callback.call(mSpeed);
                 hasChangedView = true;
@@ -144,52 +133,18 @@ public class Camera2d {
     }
 
     private Matrix4f generateViewMatrix() {
-        return new Matrix4f().lookAt(pos, pos.add(new Vector3f(0, 0, 1), new Vector3f()), worldUp);
+        return new Matrix4f().lookAt(pos, pos.add(forward, new Vector3f()), up);
     }
 
     public Matrix4f generateOrthoMatrix() {
-        return new Matrix4f().identity().ortho(-2, 2, -1, 1, near, far);
+        return new Matrix4f().identity().ortho(-captureSize.width, captureSize.width, -captureSize.height, captureSize.height, near, far);
     }
 
-//    public void forceDirectionUpdate() {
-//        calculateDirections();
-//    }
+    public Vector3f getForward() {
+        return new Vector3f(forward);
+    }
 
-//    private void calculateDirections() {
-//        clampPitch();
-//        float cPitch = (float) Math.cos(Math.toRadians(pitch));
-//        float sPitch = (float) Math.sin(Math.toRadians(pitch));
-//        float cYaw = (float) Math.cos(Math.toRadians(yaw));
-//        float sYaw = (float) Math.sin(Math.toRadians(yaw));
-//        forward.set(cYaw * cPitch, sPitch, sYaw * cPitch).normalize();
-//
-//        forward.cross(worldUp, right).normalize();
-//        right.cross(forward, up);
-//    }
-
-//    private void clampPitch() {
-//        pitch = Math.clamp(pitch, -89, 89);
-//    }
-
-//    public void setMode(int newMode) {
-//        if (mode == newMode) return;
-//        mode = newMode;
-//        hasChangedView = true;
-//    }
-
-//    public int getMode() {
-//        return mode;
-//    }
-
-//    public Vector3f getForward() {
-//        return new Vector3f(forward);
-//    }
-
-//    public Vector3f getRight() {
-//        return new Vector3f(right);
-//    }
-
-//    public Vector3f getUp() {
-//        return new Vector3f(up);
-//    }
+    public Vector3f getUp() {
+        return new Vector3f(up);
+    }
 }

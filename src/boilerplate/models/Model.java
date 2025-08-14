@@ -1,8 +1,7 @@
 package boilerplate.models;
 
 import boilerplate.common.BoilerplateShaders;
-import boilerplate.rendering.Camera3d;
-import boilerplate.rendering.Renderer;
+import boilerplate.rendering.CameraPerspective;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.buffers.VertexArray;
 import boilerplate.rendering.buffers.VertexArrayBuffer;
@@ -187,7 +186,7 @@ public class Model {
         }
     }
 
-    public void setupBoneRendering(Camera3d camera3d) {
+    public void setupBoneRendering(CameraPerspective camera3d) {
         if (boneCounter == 0) return;
 
         if (!boneShader.isSetup()) {

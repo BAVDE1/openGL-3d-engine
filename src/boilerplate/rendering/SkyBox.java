@@ -17,13 +17,13 @@ public class SkyBox {
     protected Model cubeModel;
     protected CubeMap skyBoxTexture = new CubeMap();
 
-    protected Camera3d camera3d;
+    protected CameraPerspective camera3d;
 
     public SkyBox() {
 
     }
 
-    public void setupBuffers(Camera3d camera3d, String texturesDirectory, String imageExtension) {
+    public void setupBuffers(CameraPerspective camera3d, String texturesDirectory, String imageExtension) {
         this.camera3d = camera3d;
 
         sh.genProgram();

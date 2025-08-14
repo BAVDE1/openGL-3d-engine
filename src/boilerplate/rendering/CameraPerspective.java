@@ -14,7 +14,7 @@ import java.util.Arrays;
 
 import static org.lwjgl.glfw.GLFW.*;
 
-public class Camera3d {
+public class CameraPerspective {
     public static final int MODE_FLY = 0;
     public static final int MODE_TARGET = 1;
 
@@ -58,44 +58,44 @@ public class Camera3d {
     private Vector2f mousePosOnClick;
     private Vector2f prevMousePos;  // for wayland
 
-    ArrayList<CameraAction> keyMovementActions = new ArrayList<>(Arrays.asList(
-            new CameraAction(GLFW_KEY_W, speed -> pos.add(forward.mul(speed, new Vector3f()))),
-            new CameraAction(GLFW_KEY_S, speed -> pos.sub(forward.mul(speed, new Vector3f()))),
-            new CameraAction(GLFW_KEY_D, speed -> pos.add(right.mul(speed, new Vector3f()))),
-            new CameraAction(GLFW_KEY_A, speed -> pos.sub(right.mul(speed, new Vector3f()))),
-            new CameraAction(GLFW_KEY_E, speed -> pos.add(up.mul(speed, new Vector3f()))),
-            new CameraAction(GLFW_KEY_Q, speed -> pos.sub(up.mul(speed, new Vector3f()))),
-            new CameraAction(GLFW_KEY_SPACE, speed -> pos.add(0, speed, 0)),
-            new CameraAction(GLFW_KEY_LEFT_CONTROL, speed -> pos.sub(0, speed, 0))
+    ArrayList<CameraKeyAction> keyMovementActions = new ArrayList<>(Arrays.asList(
+            new CameraKeyAction(GLFW_KEY_W, speed -> pos.add(forward.mul(speed, new Vector3f()))),
+            new CameraKeyAction(GLFW_KEY_S, speed -> pos.sub(forward.mul(speed, new Vector3f()))),
+            new CameraKeyAction(GLFW_KEY_D, speed -> pos.add(right.mul(speed, new Vector3f()))),
+            new CameraKeyAction(GLFW_KEY_A, speed -> pos.sub(right.mul(speed, new Vector3f()))),
+            new CameraKeyAction(GLFW_KEY_E, speed -> pos.add(up.mul(speed, new Vector3f()))),
+            new CameraKeyAction(GLFW_KEY_Q, speed -> pos.sub(up.mul(speed, new Vector3f()))),
+            new CameraKeyAction(GLFW_KEY_SPACE, speed -> pos.add(0, speed, 0)),
+            new CameraKeyAction(GLFW_KEY_LEFT_CONTROL, speed -> pos.sub(0, speed, 0))
     ));
-    ArrayList<CameraAction> keyRotationActions = new ArrayList<>(Arrays.asList(
-            new CameraAction(GLFW_KEY_UP, speed -> pitch += speed),
-            new CameraAction(GLFW_KEY_DOWN, speed -> pitch -= speed),
-            new CameraAction(GLFW_KEY_RIGHT, speed -> yaw += speed),
-            new CameraAction(GLFW_KEY_LEFT, speed -> yaw -= speed),
-            new CameraAction(GLFW_KEY_P, speed -> roll += speed),
-            new CameraAction(GLFW_KEY_O, speed -> roll -= speed)
+    ArrayList<CameraKeyAction> keyRotationActions = new ArrayList<>(Arrays.asList(
+            new CameraKeyAction(GLFW_KEY_UP, speed -> pitch += speed),
+            new CameraKeyAction(GLFW_KEY_DOWN, speed -> pitch -= speed),
+            new CameraKeyAction(GLFW_KEY_RIGHT, speed -> yaw += speed),
+            new CameraKeyAction(GLFW_KEY_LEFT, speed -> yaw -= speed),
+            new CameraKeyAction(GLFW_KEY_P, speed -> roll += speed),
+            new CameraKeyAction(GLFW_KEY_O, speed -> roll -= speed)
     ));
 
-    public Camera3d(Dimension aspectSize, int mode) {
+    public CameraPerspective(Dimension aspectSize, int mode) {
         this.captureSize = aspectSize;
         this.mode = mode;
         calculateDirections();
     }
 
-    public Camera3d(Dimension aspectSize, int mode, Vector3f initialPos) {
+    public CameraPerspective(Dimension aspectSize, int mode, Vector3f initialPos) {
         this(aspectSize, mode);
         pos = new Vector3f(initialPos);
         calculateDirections();
     }
 
-    public Camera3d(Dimension aspectSize, int mode, int initialRadius) {
+    public CameraPerspective(Dimension aspectSize, int mode, int initialRadius) {
         this(aspectSize, mode);
         targetRadius = initialRadius;
         calculateDirections();
     }
 
-    public Camera3d(Dimension aspectSize, int mode, Vector3f initialPos, int initialRadius) {
+    public CameraPerspective(Dimension aspectSize, int mode, Vector3f initialPos, int initialRadius) {
         this(aspectSize, mode);
         targetRadius = initialRadius;
         pos = new Vector3f(initialPos);
@@ -139,7 +139,7 @@ public class Camera3d {
 
         // rotation
         float rSpeed = rotSpeed * speedMul * (float) dt;
-        for (CameraAction action : keyRotationActions) {
+        for (CameraKeyAction action : keyRotationActions) {
             if (window.isKeyPressed(action.key)) {
                 action.callback.call(rSpeed);
                 rotUpdated = true;
@@ -152,7 +152,7 @@ public class Camera3d {
         // movement
         if (mode == MODE_FLY) {
             float mSpeed = moveSpeed * speedMul * (float) dt;
-            for (CameraAction action : keyMovementActions) {
+            for (CameraKeyAction action : keyMovementActions) {
                 if (window.isKeyPressed(action.key)) {
                     action.callback.call(mSpeed);
                     hasChangedView = true;

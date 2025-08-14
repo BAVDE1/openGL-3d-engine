@@ -3,7 +3,7 @@ package boilerplate.example;
 import boilerplate.common.*;
 import boilerplate.common.Window;
 import boilerplate.models.Model;
-import boilerplate.rendering.Camera3d;
+import boilerplate.rendering.CameraPerspective;
 import boilerplate.rendering.Renderer;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.SkyBox;
@@ -45,7 +45,7 @@ public class Example3d extends GameBase {
 
     boolean renderWireFrame = false;
 
-    Camera3d camera = new Camera3d(new Dimension(1, 1), Camera3d.MODE_TARGET, new Vector3f(0, 0, 5), 5);
+    CameraPerspective camera = new CameraPerspective(new Dimension(1, 1), CameraPerspective.MODE_TARGET, new Vector3f(0, 0, 5), 5);
 
     ShaderProgram shPost = new ShaderProgram();
     ShaderProgram shCubeMap = new ShaderProgram();
@@ -146,7 +146,7 @@ public class Example3d extends GameBase {
                     model2.renderBones(!model2.renderBones);
                 }
                 if (key == GLFW_KEY_F)
-                    camera.setMode(camera.getMode() == Camera3d.MODE_FLY ? Camera3d.MODE_TARGET : Camera3d.MODE_FLY);
+                    camera.setMode(camera.getMode() == CameraPerspective.MODE_FLY ? CameraPerspective.MODE_TARGET : CameraPerspective.MODE_FLY);
                 if (key == GLFW_KEY_1) model.animator.playAnimation("R6Armature|WalkAnim");
                 if (key == GLFW_KEY_2) model.animator.playAnimation("R6Armature|Climb");
                 if (key == GLFW_KEY_3) model.animator.playAnimation("R6Armature|Idle2");
