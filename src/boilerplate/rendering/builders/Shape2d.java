@@ -36,6 +36,11 @@ public class Shape2d {
             }
             return l;
         }
+
+        @Override
+        public String toString() {
+            return "Poly2d(%s, %s)".formatted(pos, points);
+        }
     }
 
     public static Poly2d createRect(Vector2f topLeft, Vector2f size) {

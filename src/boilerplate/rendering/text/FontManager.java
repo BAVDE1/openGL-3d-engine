@@ -247,7 +247,6 @@ public class FontManager {
 
         graphics.dispose();
         finalTexture = new Texture2d(fullImage);
-        finalTexture.bindToSlot(FONT_TEXTURE_SLOT);
         Logging.debug("%s fonts generated, texture bound to slot %s", allLoadedFonts.size(), FONT_TEXTURE_SLOT);
 
         setupTextShader2d(camera);
@@ -262,7 +261,7 @@ public class FontManager {
         textShader2d.attachShader(BoilerplateShaders.Text2DFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders.Text2DFragment");
         textShader2d.linkProgram();
         camera.bindShaderToUniformBlock(textShader2d);
-        textShader2d.uniform1i("fontTexture", FONT_TEXTURE_SLOT);
+        textShader2d.uniformTexture("fontTexture", finalTexture, FONT_TEXTURE_SLOT);
     }
 
     private static void setupTextLayout() {

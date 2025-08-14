@@ -15,6 +15,7 @@ public class BoilerplateShaders {
             layout(location = 2) in vec4 texColour;
             
             layout (std140) uniform %s {
+                mat4 projection;
                 mat4 view;
             };
             
@@ -22,7 +23,7 @@ public class BoilerplateShaders {
             out vec4 v_texColour;
             
             void main() {
-                gl_Position = view * vec4(pos.xy, 1, 1);
+                gl_Position = projection * view * vec4(-pos.xy / 20, 1, 1);
                 v_texturePos = texturePos;
                 v_texColour = texColour;
             }
@@ -40,7 +41,7 @@ public class BoilerplateShaders {
             
             void main() {
                 float alpha = v_texturePos.x > -1 ? texture(fontTexture, v_texturePos.xy).a : 1;
-                colour = (v_texColour * alpha) / 255;
+                colour = (v_texColour) / 255;
             }
             """;
 

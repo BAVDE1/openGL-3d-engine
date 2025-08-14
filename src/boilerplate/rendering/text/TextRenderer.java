@@ -49,9 +49,13 @@ public class TextRenderer {
             setYSpacing(ySpacing);
         }
 
-        public TextObject(int loadedFontId, String string, Vector2f pos, Color textColour, Color bgCol) {
+        public TextObject(int loadedFontId, String string, Vector2f pos, Color textColour) {
             this(loadedFontId, string, pos);
             setTextColour(textColour);
+        }
+
+        public TextObject(int loadedFontId, String string, Vector2f pos, Color textColour, Color bgCol) {
+            this(loadedFontId, string, pos, textColour);
             setBgCol(bgCol);
         }
 
