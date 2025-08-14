@@ -26,7 +26,7 @@ public class ExampleIndex extends GameBase {
     public boilerplate.common.Window window = new Window();
     final Dimension SCREEN_SIZE = new Dimension(500, 500);
 
-    CameraOrtho camera = new CameraOrtho(new Dimension(5, 5));
+    CameraOrtho camera = new CameraOrtho(new Dimension(3, 3));
     TextRenderer textRenderer = new TextRenderer();
 
     ShaderProgram ms = new ShaderProgram();

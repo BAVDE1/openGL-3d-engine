@@ -235,7 +235,7 @@ public class FontManager {
     }
 
     /** generate all font images onto one universal image atlas at their y offsets */
-    public static void generateAndBindAllFonts(CameraOrtho camera2d) {
+    public static void generateAndBindAllFonts(CameraOrtho camera) {
         BufferedImage fullImage = new BufferedImage(fullWidth, fullHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = fullImage.createGraphics();
 
@@ -250,18 +250,18 @@ public class FontManager {
         finalTexture.bindToSlot(FONT_TEXTURE_SLOT);
         Logging.debug("%s fonts generated, texture bound to slot %s", allLoadedFonts.size(), FONT_TEXTURE_SLOT);
 
-        setupTextShader2d(camera2d);
+        setupTextShader2d(camera);
         setupTextLayout();
 
         if (writeFontsToFile) Texture2d.writeToFile(fullImage);
     }
 
-    private static void setupTextShader2d(CameraOrtho camera2d) {
+    private static void setupTextShader2d(CameraOrtho camera) {
         textShader2d.genProgram();
-        textShader2d.attachShader(String.format(BoilerplateShaders.Text2DVertex, camera2d.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.Text2DVertex");
+        textShader2d.attachShader(String.format(BoilerplateShaders.Text2DVertex, camera.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.Text2DVertex");
         textShader2d.attachShader(BoilerplateShaders.Text2DFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders.Text2DFragment");
         textShader2d.linkProgram();
-        camera2d.bindShaderToUniformBlock(textShader2d);
+        camera.bindShaderToUniformBlock(textShader2d);
         textShader2d.uniform1i("fontTexture", FONT_TEXTURE_SLOT);
     }
 

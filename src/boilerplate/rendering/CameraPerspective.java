@@ -14,26 +14,14 @@ import java.util.Arrays;
 
 import static org.lwjgl.glfw.GLFW.*;
 
-public class CameraPerspective {
+public class CameraPerspective extends Camera {
     public static final int MODE_FLY = 0;
     public static final int MODE_TARGET = 1;
 
     protected int mode;
-    public boolean hasChangedView = true;
-    public boolean hasChangedProjection = true;
-
-    protected VertexUniformBuffer vub = new VertexUniformBuffer();
-    public String uniformBlockName = "CameraView";
-
-    // perspective
-    public Dimension captureSize;
-    protected float aspect;
     public float fov = 80;
-    public float near = .05f;
-    public float far = 50;
 
     // view
-    public Vector3f pos = new Vector3f();
     public Vector3f target = new Vector3f();
     public float targetRadius = 3;
     public float targetRadiusMin = .2f;
@@ -43,7 +31,6 @@ public class CameraPerspective {
     public float yaw = -90;  // (initial -90 to look along z axis)
     public float roll = 0;  // TODO: not implemented
 
-    public Vector3f worldUp = new Vector3f(0, 1, 0);
     protected Vector3f forward = new Vector3f();
     protected Vector3f right = new Vector3f();
     protected Vector3f up = new Vector3f();
@@ -100,37 +87,6 @@ public class CameraPerspective {
         targetRadius = initialRadius;
         pos = new Vector3f(initialPos);
         calculateDirections();
-    }
-
-    public void setupUniformBuffer(ShaderProgram... shadersToBind) {
-        if (vub.getId() != -1) {
-            Logging.danger("Uniform buffer has already been setup. Call `bindShaderToUniformBlock` to bind more shaders.");
-            return;
-        }
-        vub.genId();
-        vub.bufferSize(MathUtils.MATRIX4F_BYTES_SIZE * 2);
-        bindShaderToUniformBlock(shadersToBind);
-    }
-
-    public void bindShaderToUniformBlock(ShaderProgram... shadersToBind) {
-        if (vub.getId() == -1) {
-            Logging.danger("Uniform buffer has not yet been setup. Aborting");
-            return;
-        }
-        vub.bindUniformBlock(uniformBlockName, shadersToBind);
-    }
-
-    /** Updates the perspective and the view if they have changed */
-    public void updateUniformBlock() {
-        if (hasChangedProjection) {
-            hasChangedProjection = false;
-            vub.bufferSubData(0, MathUtils.matrixToBuff(generatePerspectiveMatrix()));
-        }
-
-        if (hasChangedView) {
-            hasChangedView = false;
-            vub.bufferSubData(MathUtils.MATRIX4F_BYTES_SIZE, MathUtils.matrixToBuff(generateViewMatrix()));
-        }
     }
 
     public void processKeyInputs(Window window, double dt) {
@@ -229,7 +185,7 @@ public class CameraPerspective {
         };
     }
 
-    public Matrix4f generatePerspectiveMatrix() {
+    public Matrix4f generateProjectionMatrix() {
         aspect = (float) captureSize.width / (float) captureSize.height;
         return new Matrix4f().identity().perspective((float) Math.toRadians(fov), aspect, near, far);
     }

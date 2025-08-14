@@ -1,9 +1,6 @@
 package boilerplate.rendering;
 
 import boilerplate.common.Window;
-import boilerplate.rendering.buffers.VertexUniformBuffer;
-import boilerplate.utility.Logging;
-import boilerplate.utility.MathUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -14,24 +11,10 @@ import java.util.Arrays;
 
 import static org.lwjgl.glfw.GLFW.*;
 
-public class CameraOrtho {
-    public boolean hasChangedView = true;
-    public boolean hasChangedProjection = true;
-
-    protected VertexUniformBuffer vub = new VertexUniformBuffer();
-    public String uniformBlockName = "CameraView";
-
-    // perspective
-    public Dimension captureSize;
-    protected float aspect;
-    public float near = .05f;
-    public float far = 50;
-
+public class CameraOrtho extends Camera {
     // view
-    public Vector3f pos = new Vector3f();
-    public Vector3f worldUp = new Vector3f(0, 1, 0);
-    protected Vector3f forward = new Vector3f(0, 0, 1);
     protected Vector3f up = new Vector3f(worldUp);
+    protected Vector3f forward = new Vector3f(0, -1, 1);
 
     // controls
     public float moveSpeed = 3;
@@ -42,7 +25,7 @@ public class CameraOrtho {
     private Vector2f mousePosOnClick;
     private Vector2f prevMousePos;  // for wayland
 
-    ArrayList<CameraKeyAction> keyMovementActions = new ArrayList<>(Arrays.asList(
+    ArrayList<CameraKeyAction> keyViewActions = new ArrayList<>(Arrays.asList(
             new CameraKeyAction(GLFW_KEY_W, speed -> pos.add(up.mul(speed, new Vector3f()))),
             new CameraKeyAction(GLFW_KEY_S, speed -> pos.sub(up.mul(speed, new Vector3f()))),
             new CameraKeyAction(GLFW_KEY_D, speed -> pos.sub(up.cross(forward, new Vector3f()).mul(speed))),
@@ -50,7 +33,6 @@ public class CameraOrtho {
             new CameraKeyAction(GLFW_KEY_E, speed -> up.rotateAxis(speed, forward.x, forward.y, forward.z)),
             new CameraKeyAction(GLFW_KEY_Q, speed -> up.rotateAxis(-speed, forward.x, forward.y, forward.z))
     ));
-    ArrayList<CameraKeyAction> keyRotationActions = new ArrayList<>();
 
     public CameraOrtho(Dimension aspectSize) {
         this.captureSize = aspectSize;
@@ -61,43 +43,10 @@ public class CameraOrtho {
         pos = new Vector3f(initialPos);
     }
 
-    public void setupUniformBuffer(ShaderProgram... shadersToBind) {
-        if (vub.getId() != -1) {
-            Logging.danger("Uniform buffer has already been setup. Call `bindShaderToUniformBlock` to bind more shaders.");
-            return;
-        }
-        vub.genId();
-        vub.bufferSize(MathUtils.MATRIX4F_BYTES_SIZE * 2);
-        bindShaderToUniformBlock(shadersToBind);
-    }
-
-    public void bindShaderToUniformBlock(ShaderProgram... shadersToBind) {
-        if (vub.getId() == -1) {
-            Logging.danger("Uniform buffer has not yet been setup. Aborting");
-            return;
-        }
-        vub.bindUniformBlock(uniformBlockName, shadersToBind);
-    }
-
-    /** Updates the perspective and the view if they have changed */
-    public void updateUniformBlock() {
-        if (hasChangedProjection) {
-            hasChangedProjection = false;
-            vub.bufferSubData(0, MathUtils.matrixToBuff(generateOrthoMatrix()));
-        }
-
-        if (hasChangedView) {
-            hasChangedView = false;
-            vub.bufferSubData(MathUtils.MATRIX4F_BYTES_SIZE, MathUtils.matrixToBuff(generateViewMatrix()));
-        }
-    }
-
     public void processKeyInputs(Window window, double dt) {
         float speedMul = window.isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? 3 : (window.isKeyPressed(GLFW_KEY_LEFT_ALT) ? .3f : 1);
-
-        // movement
         float mSpeed = moveSpeed * speedMul * (float) dt;
-        for (CameraKeyAction action : keyMovementActions) {
+        for (CameraKeyAction action : keyViewActions) {
             if (window.isKeyPressed(action.key)) {
                 action.callback.call(mSpeed);
                 hasChangedView = true;
@@ -132,11 +81,11 @@ public class CameraOrtho {
         }
     }
 
-    private Matrix4f generateViewMatrix() {
+    public Matrix4f generateViewMatrix() {
         return new Matrix4f().lookAt(pos, pos.add(forward, new Vector3f()), up);
     }
 
-    public Matrix4f generateOrthoMatrix() {
+    public Matrix4f generateProjectionMatrix() {
         return new Matrix4f().identity().ortho(-captureSize.width, captureSize.width, -captureSize.height, captureSize.height, near, far);
     }
 
