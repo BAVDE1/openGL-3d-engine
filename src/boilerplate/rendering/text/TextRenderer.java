@@ -11,6 +11,7 @@ import org.joml.Vector2f;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 
 import static org.lwjgl.opengl.GL45.*;
@@ -79,7 +80,7 @@ public class TextRenderer {
         }
 
         private float[] buildStrip() {
-            if (!hasChanged) return sb.getFloats();  // don't even bother re-building
+            if (!hasChanged) return sb.getData();  // don't even bother re-building
 
             sb.clear();
             bgSb.clear();
@@ -115,10 +116,11 @@ public class TextRenderer {
                 accumulatedY += yAddition;
             }
 
+            System.out.println(Arrays.toString(sb.getData()));
             hasChanged = false;
 
             sb.prependBuffer(bgSb, true);
-            return sb.getFloats();
+            return sb.getData();
         }
 
         public String getString() {return string;}
@@ -254,9 +256,9 @@ public class TextRenderer {
     public void draw() {
         if (hasBeenModified) buildBuffer();
 
-        if (sb.getFloatCount() > 0) {
+        if (sb.getByteCount() > 0) {
             FontManager.bindText2dShader();
-            va.drawArrays(GL_TRIANGLE_STRIP, sb.getVertexCount());
+            va.drawArrays(GL_LINE_STRIP, sb.getVertexCount());
         }
     }
 
@@ -298,20 +300,30 @@ public class TextRenderer {
      */
     public static void pushTextToBuilder(BufferBuilder2f sb, String text, FontManager.LoadedFont font, Vector2f pos, float[] appendFloats, float scale) {
         int accumulatedX = 0;
-        boolean initial = true;
+        boolean separate = true;
         for (char c : text.toCharArray()) {
             FontManager.Glyph glyph = font.getGlyph(c);
             Vector2f size = glyph.getSize().mul(scale);
-            Vector2f topLeft = pos.add(accumulatedX, 0, new Vector2f());
 
+            if (c == ' ') {
+                accumulatedX += (int) size.x;
+                separate = true;
+                continue;
+            }
+
+            Vector2f topLeft = pos.add(accumulatedX, 0, new Vector2f());
             Shape2d.Poly2d texturePoints = Shape2d.createRect(glyph.texTopLeft, glyph.texSize);
             ShapeMode.UnpackAppend mode = new ShapeMode.UnpackAppend(texturePoints.toArray(), appendFloats);
             Shape2d.Poly2d p = Shape2d.createRect(topLeft, size, mode);
 
-            if (initial) {
+            if (separate) {
                 sb.pushSeparatedPolygon(p);
-                initial = false;
-            } else sb.pushPolygon(p);
+                System.out.println("sep");
+                separate = false;
+            } else {
+                sb.pushPolygon(p);
+                System.out.println("cont");
+            }
             accumulatedX += (int) size.x;
         }
     }

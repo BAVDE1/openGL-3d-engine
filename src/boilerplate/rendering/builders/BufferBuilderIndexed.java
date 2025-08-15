@@ -9,41 +9,50 @@ import java.nio.FloatBuffer;
 /**
  * Some abstracted functions for building a buffer.
  */
-public class BufferBuilder {
+public class BufferBuilderIndexed {
     protected static final int DEFAULT_SIZE = BoilerplateConstants.BUFF_SIZE_DEFAULT;
 
-    protected byte[] data;
+    protected float[] floats;
+    protected int[] triangles;
     protected int size;
     protected boolean autoResize;
 
-    protected int byteCount = 0;
+    protected int posFloatCount = 0;
+    protected int floatCount = 0;
     protected int vertexCount = 0;
-    protected int separationsCount = 0;
 
-    protected int floatCountPerVert = 0;
+    protected int additionalVertFloats = 0;
+    protected int floatCountPerVert = getPosFloatCount();
 
-    protected boolean shouldNextBeSeparated = false;  // should the next time raw vertices are pushed be separated
-
-    public BufferBuilder() {this(DEFAULT_SIZE, false);}
-    public BufferBuilder(int size) {this(size, false);}
-    public BufferBuilder(boolean autoResize) {this(DEFAULT_SIZE, autoResize);}
-    public BufferBuilder(int size, boolean autoResize){
-        data = new byte[size];
+    public BufferBuilderIndexed() {this(DEFAULT_SIZE, false, 0);}
+    public BufferBuilderIndexed(int size) {this(size, false, 0);}
+    public BufferBuilderIndexed(boolean autoResize) {this(DEFAULT_SIZE, autoResize, 0);}
+    public BufferBuilderIndexed(boolean autoResize, int additionalVertFloats) {this(DEFAULT_SIZE, autoResize, additionalVertFloats);}
+    public BufferBuilderIndexed(int size, boolean autoResize, int additionalVertFloats){
+        floats = new float[size];
         this.size = size;
         this.autoResize = autoResize;
+        setAdditionalVertFloats(additionalVertFloats);
+    }
+
+    public int getPosFloatCount() {
+        return posFloatCount;
+    }
+
+    public void setPosFloatCount(int count) throws IllegalStateException {
+        posFloatCount = count;
     }
 
     public void clear() {
-        data = new byte[size];
-        byteCount = 0;
+        floats = new float[size];
+        floatCount = 0;
         vertexCount = 0;
-        separationsCount = 0;
     }
 
     /** Resize buffer and copy already set elements across (if there are any) */
     public void resizeBufferAndKeepElements(int newSize) {
         // store temporarily
-        byte[] temp = getData();
+        float[] temp = getFloats();
         resizeBufferAndWipe(newSize);
 
         // place back verts
@@ -56,33 +65,39 @@ public class BufferBuilder {
         clear();
     }
 
-    public byte[] getData() {
-        byte[] v = new byte[byteCount];
-        System.arraycopy(data, 0, v, 0, byteCount);
+    public void setAdditionalVertFloats(int num) {
+        if (additionalVertFloats != 0 && additionalVertFloats != num)
+            Logging.warn("Changing already set 'additional vertices'. This could warp the buffer");
+        additionalVertFloats = num;
+        floatCountPerVert = getPosFloatCount() + num;
+    }
+
+    public float[] getFloats() {
+        float[] v = new float[floatCount];
+        System.arraycopy(floats, 0, v, 0, floatCount);
         return v;
     }
 
     /** Returns a slice of the current floats in the buffer */
-    public byte[] getDataSlice(int startInx, int length) {
-        byte[] slice = new byte[length];
-        System.arraycopy(data, startInx, slice, 0, length);
+    public float[] getFloatsSlice(int startInx, int length) {
+        float[] slice = new float[length];
+        System.arraycopy(floats, startInx, slice, 0, length);
         return slice;
     }
 
     /** Returns the last N vertices in the buffer */
-    public byte[] getLastVertices(int vertexCount) {
+    public float[] getLastVertices(int vertexCount) {
         int length = vertexCount * floatCountPerVert;
-        return getDataSlice(byteCount - length, length);
+        return getFloatsSlice(floatCount - length, length);
     }
 
     public float getCurrentFullnessPercent() {
-        return (float) getData().length / size;
+        return (float) getFloats().length / size;
     }
 
     public int getBufferSize() {return size;}
-    public int getByteCount() {return byteCount;}
+    public int getFloatCount() {return floatCount;}
     public int getVertexCount() {return vertexCount;}
-    public int getSeparationsCount() {return separationsCount;}
     public boolean isAutoResizing() {return autoResize;}
     public void setAutoResize(boolean val) {autoResize = val;}
 
@@ -97,55 +112,41 @@ public class BufferBuilder {
      * PUSHING VERTICES & SHAPES
      */
 
-    public void setFloatsUnsafe(byte[] data, int destInx) {
-        System.arraycopy(data, 0, this.data, destInx, data.length);
+    public void setFloatsUnsafe(float[] floats, int destInx) {
+        System.arraycopy(floats, 0, this.floats, destInx, floats.length);
     }
 
-    public void pushRawSeparatedFloats(byte[] newBytes) {
-        pushRawFloats(newBytes, true);
+    public void pushRawSeparatedFloats(float[] newFloats) {
+        pushRawFloats(newFloats, true);
     }
 
-    public void pushRawFloats(byte[] newBytes) {
-        pushRawFloats(newBytes, false);
+    public void pushRawFloats(float[] newFloats) {
+        pushRawFloats(newFloats, false);
     }
 
-    public void pushRawFloats(byte[] newBytes, boolean separation) {
-        int fCount = newBytes.length;
+    public void pushRawFloats(float[] newFloats, boolean separation) {
+        int fCount = newFloats.length;
         if (fCount == 0) return;
 
-        // do before resize
-        if (separation || shouldNextBeSeparated) performSeparation(newBytes);
-        if (byteCount + fCount > size) {
+        if (floatCount + fCount > size) {
             if (attemptResize(fCount) == BoilerplateConstants.ERROR) return;
         }
 
-        System.arraycopy(newBytes, 0, data, byteCount, fCount);
-        byteCount += fCount;
+        System.arraycopy(newFloats, 0, floats, floatCount, fCount);
+        floatCount += fCount;
         vertexCount += fCount / floatCountPerVert;
-    }
-
-    /** pushing 2 vertices (last of current verts and first of new verts) */
-    private void performSeparation(byte[] data) {
-        shouldNextBeSeparated = false;
-        if (byteCount >= floatCountPerVert) {
-            separationsCount++;
-            byte[] separationVerts = new byte[floatCountPerVert * 2];
-            System.arraycopy(this.data, byteCount - floatCountPerVert, separationVerts, 0, floatCountPerVert);
-            System.arraycopy(data, 0, separationVerts, floatCountPerVert, floatCountPerVert);
-            pushRawFloats(separationVerts, false);  // FALSE!!!
-        }
     }
 
     private int attemptResize(int newFloatCount) {
         if (!autoResize) {
             Logging.danger("Cannot add an additional '%s' items to an array at '%s' fullness, with '%s / %s' items already set. Aborting.",
-                    newFloatCount, getCurrentFullnessPercent(), byteCount, size);
+                    newFloatCount, getCurrentFullnessPercent(), floatCount, size);
             Logging.purple("Consider setting autoResize to true! (or manually allow more space at the initialization of this builder)");
             return BoilerplateConstants.ERROR;
         }
 
         // attempt resize
-        if (autoResizeBuffer(byteCount + newFloatCount) == BoilerplateConstants.ERROR) {
+        if (autoResizeBuffer(floatCount + newFloatCount) == BoilerplateConstants.ERROR) {
             Logging.danger("An error occurred attempting to resize this buffer! Aborting.");
             return BoilerplateConstants.ERROR;
         }
@@ -193,21 +194,21 @@ public class BufferBuilder {
         }
     }
 
-    public void appendBuffer(BufferBuilder builder) {appendBuffer(builder, false);}
-    public void appendBuffer(BufferBuilder builder, boolean useSeparation) {
+    public void appendBuffer(BufferBuilderIndexed builder) {appendBuffer(builder, false);}
+    public void appendBuffer(BufferBuilderIndexed builder, boolean useSeparation) {
         if (builder.getVertexCount() == 0) return;
 
-        if (useSeparation) pushRawSeparatedFloats(builder.getData());
-        else pushRawFloats(builder.getData());
+        if (useSeparation) pushRawSeparatedFloats(builder.getFloats());
+        else pushRawFloats(builder.getFloats());
     }
 
-    public void prependBuffer(BufferBuilder builder) {prependBuffer(builder, false);}
-    public void prependBuffer(BufferBuilder builder, boolean useSeparation) {
+    public void prependBuffer(BufferBuilderIndexed builder) {prependBuffer(builder, false);}
+    public void prependBuffer(BufferBuilderIndexed builder, boolean useSeparation) {
         if (builder.getVertexCount() == 0) return;
 
-        byte[] temp = getData();
+        float[] temp = getFloats();
         clear();
-        pushRawFloats(builder.getData());
+        pushRawFloats(builder.getFloats());
         if (useSeparation) pushRawSeparatedFloats(temp);
         else pushRawFloats(temp);
     }
