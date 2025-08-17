@@ -80,7 +80,7 @@ public class TextRenderer {
         }
 
         private float[] buildStrip() {
-            if (!hasChanged) return sb.getData();  // don't even bother re-building
+            if (!hasChanged) return sb.getFloats();  // don't even bother re-building
 
             sb.clear();
             bgSb.clear();
@@ -116,11 +116,11 @@ public class TextRenderer {
                 accumulatedY += yAddition;
             }
 
-            System.out.println(Arrays.toString(sb.getData()));
+            System.out.println(Arrays.toString(sb.getFloats()));
             hasChanged = false;
 
             sb.prependBuffer(bgSb, true);
-            return sb.getData();
+            return sb.getFloats();
         }
 
         public String getString() {return string;}
@@ -256,7 +256,7 @@ public class TextRenderer {
     public void draw() {
         if (hasBeenModified) buildBuffer();
 
-        if (sb.getByteCount() > 0) {
+        if (sb.getFloatCount() > 0) {
             FontManager.bindText2dShader();
             va.drawArrays(GL_LINE_STRIP, sb.getVertexCount());
         }

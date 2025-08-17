@@ -227,17 +227,17 @@ public class Example2d extends GameBase {
                          - circles [s:%s, v:%s, f:%s/%s (%.5f)]""",
                 textBuff.getSeparationsCount(),  // note: cause we're using the text buffers own values in this text
                 textBuff.getVertexCount(),       // object it'll need to re-build itself a few extra times than normal
-                textBuff.getByteCount(),
+                textBuff.getFloatCount(),
                 textBuff.getBufferSize(),
                 textBuff.getCurrentFullnessPercent(),
                 builderMain.getSeparationsCount(),
                 builderMain.getVertexCount(),
-                builderMain.getByteCount(),
+                builderMain.getFloatCount(),
                 builderMain.getBufferSize(),
                 builderMain.getCurrentFullnessPercent(),
                 builderCircles.getSeparationsCount(),
                 builderCircles.getVertexCount(),
-                builderCircles.getByteCount(),
+                builderCircles.getFloatCount(),
                 builderCircles.getBufferSize(),
                 builderCircles.getCurrentFullnessPercent()
         );

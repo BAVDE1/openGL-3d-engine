@@ -3,6 +3,7 @@ package boilerplate.rendering.buffers;
 import boilerplate.rendering.builders.BufferBuilder;
 import org.lwjgl.opengl.GL45;
 import boilerplate.utility.Logging;
+import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -71,7 +72,7 @@ public abstract class VertexBuffer {
     }
 
     public void bufferData(BufferBuilder bb) {
-        bufferData(bb.getData());
+        bufferData(bb.getFloats());
     }
 
     public void bufferSize(int bytesSize) {

@@ -12,7 +12,7 @@ public class BufferBuilder2f extends BufferBuilder {
     public BufferBuilder2f(boolean autoResize) {this(DEFAULT_SIZE, autoResize, 0);}
     public BufferBuilder2f(boolean autoResize, int additionalVertFloats) {this(DEFAULT_SIZE, autoResize, additionalVertFloats);}
     public BufferBuilder2f(int size, boolean autoResize, int additionalVertFloats){
-        data = new float[size];
+        floats = new float[size];
         this.size = size;
         this.autoResize = autoResize;
         setAdditionalVertFloats(additionalVertFloats);
