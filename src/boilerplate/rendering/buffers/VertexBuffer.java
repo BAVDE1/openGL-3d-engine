@@ -52,7 +52,7 @@ public abstract class VertexBuffer {
 
     public void bufferData(ByteBuffer data) {
         bind();
-        if (data.remaining() == 0) data.flip();
+        if (data.position() != 0) data.flip();
         GL45.glBufferData(bufferType, data, usage);
     }
 

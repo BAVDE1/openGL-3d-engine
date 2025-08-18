@@ -23,7 +23,7 @@ public class Mesh {
     VertexLayout vertexLayout;
     HashMap<Integer, List<Model.VertexWeight>> vertexWeights = new HashMap<>();
 
-    int indicesCount = 0;
+    public int indicesCount = 0;
 
     protected ByteBuffer data = MemoryUtil.memAlloc(0);
     protected ByteBuffer indices = MemoryUtil.memAlloc(0);
@@ -116,6 +116,8 @@ public class Mesh {
         va.bindBuffer(vb, veb);
         va.pushLayout(vertexLayout);
 
+        System.out.println(data);
+        System.out.println(indices);
         vb.bufferData(data);
         veb.bufferData(indices);
     }

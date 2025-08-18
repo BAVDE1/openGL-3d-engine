@@ -10,7 +10,7 @@ public class BoilerplateShaders {
     public static String Text2DVertex = """
             #version 450 core
             
-            layout(location = 0) in vec2 pos;
+            layout(location = 0) in vec3 pos;
             layout(location = 1) in vec2 texturePos;
             layout(location = 2) in vec4 texColour;
             
@@ -23,7 +23,7 @@ public class BoilerplateShaders {
             out vec4 v_texColour;
             
             void main() {
-                gl_Position = projection * view * vec4(-pos.xy / 50, 1, 1);
+                gl_Position = projection * view * vec4(-pos.xy / 50, pos.z, 1);
                 v_texturePos = texturePos;
                 v_texColour = texColour;
             }
@@ -41,7 +41,7 @@ public class BoilerplateShaders {
             
             void main() {
                 float alpha = v_texturePos.x > -1 ? texture(fontTexture, v_texturePos.xy).a : 1;
-                colour = (v_texColour) / 255;
+                colour = vec4(v_texColour * alpha) / 255;
             }
             """;
 

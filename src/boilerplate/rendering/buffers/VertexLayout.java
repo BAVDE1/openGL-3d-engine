@@ -77,6 +77,7 @@ public class VertexLayout {
     public static final int HINT_TEX_POS = 5;
     public static final int HINT_BONE_IDS = 6;
     public static final int HINT_BONE_WEIGHTS = 7;
+    public static final int HINT_COLOUR = 8;
     public static final int HINT_CUSTOM_0 = 100;
     public static final int HINT_CUSTOM_1 = 101;
     public static final int HINT_CUSTOM_2 = 102;
@@ -127,6 +128,7 @@ public class VertexLayout {
         m.put(HINT_TEX_POS, "tex_pos");
         m.put(HINT_BONE_IDS, "bone_ids");
         m.put(HINT_BONE_WEIGHTS, "bone_weights");
+        m.put(HINT_COLOUR, "colour");
         m.put(HINT_CUSTOM_0, "custom 0");
         m.put(HINT_CUSTOM_1, "custom 1");
         m.put(HINT_CUSTOM_2, "custom 2");

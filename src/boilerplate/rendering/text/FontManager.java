@@ -176,8 +176,8 @@ public class FontManager {
     private final static ArrayList<LoadedFont> allLoadedFonts = new ArrayList<>();
     private final static HashMap<String, Integer> loadedFontUids = new HashMap<>();
 
-    private static VertexLayout textVertexLayout = new VertexLayout();
-    private static ShaderProgram textShader2d = new ShaderProgram();
+    private static VertexLayout textVertexLayout = defaultTextLayout();
+    public static ShaderProgram textShader2d = new ShaderProgram();
 
     public static int fullWidth = 0, fullHeight = 0;
     private static Texture2d finalTexture;
@@ -250,7 +250,6 @@ public class FontManager {
         Logging.debug("%s fonts generated, texture bound to slot %s", allLoadedFonts.size(), FONT_TEXTURE_SLOT);
 
         setupTextShader2d(camera);
-        setupTextLayout();
 
         if (writeFontsToFile) Texture2d.writeToFile(fullImage);
     }
@@ -264,10 +263,12 @@ public class FontManager {
         textShader2d.uniformTexture("fontTexture", finalTexture, FONT_TEXTURE_SLOT);
     }
 
-    private static void setupTextLayout() {
-        textVertexLayout.pushFloat(2);  // vertex pos
-        textVertexLayout.pushFloat(2);  // tex coord (x,y) [or is bg colour (-1,-1)]
-        textVertexLayout.pushFloat(4);  // colour (text colour or bg colour)
+    private static VertexLayout defaultTextLayout() {
+        return new VertexLayout(
+                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_POSITION),
+                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 2, VertexLayout.HINT_TEX_POS),
+                new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 4, VertexLayout.HINT_COLOUR)
+        );
     }
 
     public static int textLayoutAdditionalVerts() {return 6;}

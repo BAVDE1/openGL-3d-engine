@@ -13,6 +13,7 @@ import boilerplate.rendering.builders.BufferBuilder2f;
 import boilerplate.rendering.builders.Shape2d;
 import boilerplate.rendering.builders.ShapeMode;
 import boilerplate.rendering.text.FontManager;
+import boilerplate.rendering.text.TextObject;
 import boilerplate.rendering.text.TextRenderer;
 import boilerplate.rendering.textures.Texture2d;
 import boilerplate.utility.Logging;
@@ -48,8 +49,8 @@ public class Example2d extends GameBase {
     BufferBuilder2f builderCircles = new BufferBuilder2f();
 
     // text
-    TextRenderer.TextObject to1;
-    TextRenderer.TextObject to2;
+    TextObject to1;
+    TextObject to2;
     TextRenderer textRenderer = new TextRenderer();
 
     Vector2f mousePos = new Vector2f();
@@ -164,8 +165,8 @@ public class Example2d extends GameBase {
         vaMain.bindBuffer(vbMain);
         vaMain.fastSetup(new int[] {2, 1, 3}, vbMain);
 
-        to1 = new TextRenderer.TextObject(1, "", new Vector2f(5), Color.CYAN, Color.BLACK);
-        to2 = new TextRenderer.TextObject(1, "", new Vector2f(5, 50), Color.WHITE, Color.BLACK);
+        to1 = new TextObject(1, "", new Vector2f(5), Color.CYAN, Color.BLACK);
+        to2 = new TextObject(1, "", new Vector2f(5, 50), Color.WHITE, Color.BLACK);
         to1.setBgMargin(new Vector2f(5));
         to2.setBgMargin(new Vector2f(5));
         textRenderer.setupBufferObjects();

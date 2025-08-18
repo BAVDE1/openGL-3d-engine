@@ -9,11 +9,13 @@ import boilerplate.rendering.camera.CameraOrtho;
 import boilerplate.rendering.Renderer;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.text.FontManager;
+import boilerplate.rendering.text.TextObject;
 import boilerplate.rendering.text.TextRenderer;
 import boilerplate.rendering.textures.Texture2d;
 import boilerplate.utility.Logging;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
+import org.lwjgl.opengl.GL45;
 import org.lwjgl.util.par.ParShapes;
 import org.lwjgl.util.par.ParShapesMesh;
 
@@ -53,12 +55,12 @@ public class ExampleIndex extends GameBase {
         FontManager.generateAndBindAllFonts(camera);
 
         ms.autoInitializeShadersMulti("shaders/2d_shapes.glsl");
-        ParShapesMesh cube = ParShapes.par_shapes_create_cube();
-        assert cube != null;
-        ParShapes.par_shapes_translate(cube, -.5f, -.5f, -.5f);
-        ParShapes.par_shapes_unweld(cube, true);
-        ParShapes.par_shapes_compute_normals(cube);
-        m.loadShape(cube);
+//        ParShapesMesh cube = ParShapes.par_shapes_create_cube();
+//        assert cube != null;
+//        ParShapes.par_shapes_translate(cube, -.5f, -.5f, -.5f);
+//        ParShapes.par_shapes_unweld(cube, true);
+//        ParShapes.par_shapes_compute_normals(cube);
+//        m.loadShape(cube);
 
         bindEvents();
         setupBuffers();
@@ -83,10 +85,11 @@ public class ExampleIndex extends GameBase {
     }
 
     public void setupBuffers() {
-        TextRenderer.TextObject to1 = new TextRenderer.TextObject(1, "q  qaa", new Vector2f(), Color.YELLOW);
-        TextRenderer.TextObject to2 = new TextRenderer.TextObject(1, "[e]\n\n3d example", new Vector2f(SCREEN_SIZE.width-120, 60), Color.CYAN);
-        to1.setAlignment(TextRenderer.TextObject.ALIGN_MIDDLE);
-        to2.setAlignment(TextRenderer.TextObject.ALIGN_MIDDLE);
+        TextObject to1 = new TextObject(1, "q\nq  aa", new Vector2f(), Color.YELLOW, Color.RED);
+//        TextObject to2 = new TextObject(1, "1\n2", new Vector2f(0, 60), Color.CYAN);
+        to1.setBgMargin(new Vector2f(10, 5));
+        to1.setAlignment(TextObject.ALIGN_MIDDLE);
+//        to2.setAlignment(TextObject.ALIGN_MIDDLE);
         textRenderer.setupBufferObjects();
         textRenderer.pushTextObject(to1);
     }
@@ -118,9 +121,9 @@ public class ExampleIndex extends GameBase {
     public void render() {
         Renderer.clearCDS();
         Renderer.enableDepthTest();
-        Renderer.enableFaceCulling();
-        m.modelTransform = new Matrix4f().identity().translate(0, 0, 10).rotateX(-.3f).rotateY((float) (Math.PI * glfwGetTime() * .6f));
-        m.draw(ms, 0);
+//        Renderer.enableFaceCulling();
+//        m.modelTransform = new Matrix4f().identity().translate(0, 0, 10).rotateX(-.3f).rotateY((float) (Math.PI * glfwGetTime() * .6f));
+//        m.draw(ms, 0);
         textRenderer.draw();
         Renderer.finish(window);
     }
