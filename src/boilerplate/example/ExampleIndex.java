@@ -85,7 +85,7 @@ public class ExampleIndex extends GameBase {
     }
 
     public void setupBuffers() {
-        TextObject to1 = new TextObject(1, "q\nq  aa", new Vector2f(), Color.YELLOW, Color.RED);
+        TextObject to1 = new TextObject(1, "q\n\nq  aa", new Vector2f(), Color.YELLOW, Color.BLUE);
 //        TextObject to2 = new TextObject(1, "1\n2", new Vector2f(0, 60), Color.CYAN);
         to1.setBgMargin(new Vector2f(10, 5));
         to1.setAlignment(TextObject.ALIGN_MIDDLE);

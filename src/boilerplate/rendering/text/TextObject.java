@@ -106,26 +106,25 @@ public class TextObject {
     }
 
     public String getFilteredString() {
-        return string.replaceAll(" ", "");
+        return string.replaceAll(" |\n", "");
     }
 
     public int getLinesCount() {
-        String linesFiltered = string.replaceAll("\n", "");
-        return 1 + (string.length() - linesFiltered.length());
+        int count = 0;
+        for (String line : string.split("\n")) count += line.isEmpty() ? 0 : 1;
+        return count;
     }
 
     public int calcVerticesSize() {
-        String filtered = getFilteredString();
         boolean hasBg = bgCol.getAlpha() > BoilerplateConstants.EPSILON;
-        int charsSize = filtered.length() * parent.vertexLayout.stride * 4;
+        int charsSize = getFilteredString().length() * parent.vertexLayout.stride * 4;
         int bgSize = hasBg ? getLinesCount() * parent.vertexLayout.stride * 4 : 0;
         return charsSize + bgSize;
     }
 
     public int calcIndicesSize() {
-        String filtered = getFilteredString();
         boolean hasBg = bgCol.getAlpha() > BoilerplateConstants.EPSILON;
-        int charsSize = filtered.length() * 6 * Integer.BYTES;
+        int charsSize = getFilteredString().length() * 6 * Integer.BYTES;
         int bgSize = hasBg ? getLinesCount() * 6 * Integer.BYTES : 0;
         return charsSize + bgSize;
     }
