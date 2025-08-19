@@ -5,6 +5,7 @@ import boilerplate.rendering.buffers.VertexUniformBuffer;
 import boilerplate.utility.Logging;
 import boilerplate.utility.MathUtils;
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.awt.*;
@@ -20,7 +21,7 @@ public abstract class Camera {
     public String uniformBlockName = "CameraView";
 
     // projection
-    public Dimension captureSize;
+    public Vector2f captureSize;
     protected float aspect;
     public float near = .05f;
     public float far = 50;

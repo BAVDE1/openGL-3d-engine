@@ -26,9 +26,9 @@ import static org.lwjgl.opengl.GL45.glDebugMessageCallback;
 
 public class ExampleIndex extends GameBase {
     public boilerplate.common.Window window = new Window();
-    final Dimension SCREEN_SIZE = new Dimension(500, 300);
+    final Vector2f SCREEN_SIZE = new Vector2f(500, 300);
 
-    CameraOrtho camera = new CameraOrtho(new Dimension(SCREEN_SIZE.width / 150, SCREEN_SIZE.height / 150));
+    CameraOrtho camera = new CameraOrtho(new Vector2f(SCREEN_SIZE.x / 150, SCREEN_SIZE.y / 150));
     TextRenderer textRenderer = new TextRenderer();
 
     ShaderProgram modelShader = new ShaderProgram();
@@ -46,7 +46,7 @@ public class ExampleIndex extends GameBase {
     public void createCapabilitiesAndOpen() {
         Window.Options winOps = new Window.Options();
         winOps.title = "the example index";
-        winOps.initWindowSize = SCREEN_SIZE;
+        winOps.initWindowSize = new Dimension((int) SCREEN_SIZE.x, (int) SCREEN_SIZE.y);
         window.quickSetupAndShow(winOps);
 
         camera.setupUniformBuffer();
@@ -87,8 +87,9 @@ public class ExampleIndex extends GameBase {
     }
 
     public void setupBuffers() {
-        TextObject to1 = new TextObject(1, "[p]\n3d example", new Vector2f(-80, 80), Color.YELLOW);
+        TextObject to1 = new TextObject(1, "[p]\n3d example", new Vector2f(-80, 80), Color.YELLOW, Color.RED);
         TextObject to2 = new TextObject(1, "[o]\n2d example", new Vector2f(80, 80), Color.CYAN);
+        to1.setBgMargin(new Vector2f(10, 5));
         to1.setAlignment(TextObject.ALIGN_MIDDLE);
         to2.setAlignment(TextObject.ALIGN_MIDDLE);
         textRenderer.setupDefaultShader(camera);

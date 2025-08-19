@@ -62,25 +62,25 @@ public class CameraPerspective extends Camera {
             new CameraKeyAction(GLFW_KEY_O, speed -> roll -= speed)
     ));
 
-    public CameraPerspective(Dimension aspectSize, int mode) {
+    public CameraPerspective(Vector2f aspectSize, int mode) {
         this.captureSize = aspectSize;
         this.mode = mode;
         calculateDirections();
     }
 
-    public CameraPerspective(Dimension aspectSize, int mode, Vector3f initialPos) {
+    public CameraPerspective(Vector2f aspectSize, int mode, Vector3f initialPos) {
         this(aspectSize, mode);
         pos = new Vector3f(initialPos);
         calculateDirections();
     }
 
-    public CameraPerspective(Dimension aspectSize, int mode, int initialRadius) {
+    public CameraPerspective(Vector2f aspectSize, int mode, int initialRadius) {
         this(aspectSize, mode);
         targetRadius = initialRadius;
         calculateDirections();
     }
 
-    public CameraPerspective(Dimension aspectSize, int mode, Vector3f initialPos, int initialRadius) {
+    public CameraPerspective(Vector2f aspectSize, int mode, Vector3f initialPos, int initialRadius) {
         this(aspectSize, mode);
         targetRadius = initialRadius;
         pos = new Vector3f(initialPos);
@@ -184,7 +184,7 @@ public class CameraPerspective extends Camera {
     }
 
     public Matrix4f generateProjectionMatrix() {
-        aspect = (float) captureSize.width / (float) captureSize.height;
+        aspect = captureSize.x / captureSize.y;
         return new Matrix4f().identity().perspective((float) Math.toRadians(fov), aspect, near, far);
     }
 

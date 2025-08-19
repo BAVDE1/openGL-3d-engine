@@ -294,12 +294,11 @@ public class TextObject {
             public void buildBackground(TextObject textObject, Vector2f linePos, float lineWidth, int yAddition) {
                 Vector2f size = new Vector2f(lineWidth, yAddition);
                 if (!textObject.seamlessBgLines) size.y -= textObject.ySpacing;
-                pushRect(textObject, linePos.sub(textObject.bgMargin, new Vector2f()), size.add(textObject.bgMargin.mul(2, new Vector2f())), new Vector2f(-1), new Vector2f(), textObject.bgCol, 1);
+                pushRect(textObject, linePos.add(textObject.bgMargin, new Vector2f()), size.add(textObject.bgMargin.mul(2, new Vector2f())), new Vector2f(-1), new Vector2f(), textObject.bgCol, 1);
             }
 
             @Override
             public void buildLine(TextObject textObject, String line, FontManager.LoadedFont font, Vector2f linePos) {
-                System.out.println(line);
                 int accumulatedX = 0;
                 for (char c : line.toCharArray()) {
                     FontManager.Glyph glyph = font.getGlyph(c);

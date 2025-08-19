@@ -34,11 +34,11 @@ public class CameraOrtho extends Camera {
             new CameraKeyAction(GLFW_KEY_Q, speed -> up.rotateAxis(-speed, forward.x, forward.y, forward.z))
     ));
 
-    public CameraOrtho(Dimension captureSize) {
+    public CameraOrtho(Vector2f captureSize) {
         this.captureSize = captureSize;
     }
 
-    public CameraOrtho(Dimension captureSize, Vector3f initialPos) {
+    public CameraOrtho(Vector2f captureSize, Vector3f initialPos) {
         this(captureSize);
         pos = new Vector3f(initialPos);
     }
@@ -86,7 +86,7 @@ public class CameraOrtho extends Camera {
     }
 
     public Matrix4f generateProjectionMatrix() {
-        return new Matrix4f().identity().ortho(-captureSize.width, captureSize.width, -captureSize.height, captureSize.height, near, far);
+        return new Matrix4f().identity().ortho(-captureSize.x, captureSize.x, -captureSize.y, captureSize.y, near, far);
     }
 
     public Vector3f getForward() {

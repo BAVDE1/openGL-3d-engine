@@ -43,6 +43,7 @@ public class BoilerplateShaders {
             
             void main() {
                 float alpha = v_texturePos.x > -1 ? texture(fontTexture, v_texturePos.xy).a : 1;
+                if (alpha < 0.01) discard;
                 colour = vec4(v_texColour * alpha) / 255;
             }
             """;

@@ -34,8 +34,8 @@ import static org.lwjgl.opengl.GL45.GL_TRIANGLE_STRIP;
  */
 public class Example2d extends GameBase {
     public Window window = new Window();
-    final Dimension SCREEN_SIZE = new Dimension(900, 400);
-    final Dimension CAPTURE_SIZE = new Dimension(SCREEN_SIZE.width / 200, SCREEN_SIZE.height / 200);
+    final Vector2f SCREEN_SIZE = new Vector2f(900, 400);
+    final Vector2f CAPTURE_SIZE = new Vector2f(SCREEN_SIZE.x / 200, SCREEN_SIZE.y / 200);
     CameraOrtho camera = new CameraOrtho(CAPTURE_SIZE);
 
     public static boolean debugMode = false;
@@ -81,7 +81,7 @@ public class Example2d extends GameBase {
     public void createCapabilitiesAndOpen() {
         Window.Options winOps = new Window.Options();
         winOps.title = "the 2d example";
-        winOps.initWindowSize = SCREEN_SIZE;
+        winOps.initWindowSize = new Dimension((int) SCREEN_SIZE.x, (int) SCREEN_SIZE.y);
         window.quickSetupAndShow(winOps);
 
         camera.setupUniformBuffer();
@@ -176,13 +176,13 @@ public class Example2d extends GameBase {
         vaMain.bindBuffer(vbMain);
         vaMain.fastSetup(new int[] {2, 1, 3}, vbMain);
 
-        to1 = new TextObject(1, "", new Vector2f(5), Color.CYAN, Color.BLACK);
-        to2 = new TextObject(1, "", new Vector2f(5, 50), Color.WHITE, Color.BLACK);
+        to1 = new TextObject(1, "", new Vector2f(0, -60), Color.CYAN, Color.BLACK);
+        to2 = new TextObject(1, "", new Vector2f(0, 0), Color.WHITE, Color.BLACK);
         to1.setBgMargin(new Vector2f(5));
         to2.setBgMargin(new Vector2f(5));
         textRenderer.setupDefaultShader(camera);
         textRenderer.pushTextObject(to1, to2);
-        textRenderer.setModelTransform(new Matrix4f().identity().translate(CAPTURE_SIZE.width, CAPTURE_SIZE.height, 0).scale(1f/80, 1f/80, 1));
+        textRenderer.setModelTransform(new Matrix4f().identity().scale(1f/SCREEN_SIZE.x, 1f/SCREEN_SIZE.y, 1).translate(SCREEN_SIZE.x * CAPTURE_SIZE.x, SCREEN_SIZE.y * CAPTURE_SIZE.y, 0).scale(2*CAPTURE_SIZE.x, 2*CAPTURE_SIZE.y, 1));
 
         // CIRCLE BUFFERS
         vbCircles.genId(); vaCircles.genId();
@@ -225,9 +225,9 @@ public class Example2d extends GameBase {
         }
 
         // debug string
-        to1.setString("FPS: %s, Elapsed: %s [debug (tab): %s]\nView [pos:%.0f,%.0f, captureSize:%s] (r)eset",
+        to1.setString("FPS: %s, Elapsed: %s [debug (tab): %s]\nView [pos:%.2f,%.2f, captureSize:%.2f,%.2f] (r)eset",
                 fps, secondsElapsed, debugMode,
-                camera.pos.x, camera.pos.y, camera.captureSize
+                camera.pos.x, camera.pos.y, camera.captureSize.x, camera.captureSize.y
         );
         to2.setString("""
                         Buffers:\
@@ -290,6 +290,7 @@ public class Example2d extends GameBase {
 
     public void render() {
         Renderer.clearCDS();
+        Renderer.enableDepthTest();
 
         // shape examples & textures
         shMain.bind();

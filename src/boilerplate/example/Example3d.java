@@ -45,7 +45,7 @@ public class Example3d extends GameBase {
 
     boolean renderWireFrame = false;
 
-    CameraPerspective camera = new CameraPerspective(new Dimension(1, 1), CameraPerspective.MODE_TARGET, new Vector3f(0, 0, 5), 5);
+    CameraPerspective camera = new CameraPerspective(new Vector2f(1), CameraPerspective.MODE_TARGET, new Vector3f(0, 0, 5), 5);
 
     ShaderProgram shPost = new ShaderProgram();
     ShaderProgram shCubeMap = new ShaderProgram();
