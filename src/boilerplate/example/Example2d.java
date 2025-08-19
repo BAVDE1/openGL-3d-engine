@@ -12,6 +12,7 @@ import boilerplate.rendering.buffers.VertexLayout;
 import boilerplate.rendering.builders.BufferBuilder2f;
 import boilerplate.rendering.builders.Shape2d;
 import boilerplate.rendering.builders.ShapeMode;
+import boilerplate.rendering.camera.CameraOrtho;
 import boilerplate.rendering.text.FontManager;
 import boilerplate.rendering.text.TextObject;
 import boilerplate.rendering.text.TextRenderer;
@@ -24,7 +25,8 @@ import org.lwjgl.opengl.GL45;
 import java.awt.*;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL45.*;
+import static org.lwjgl.opengl.GL45.GL_LINE_STRIP;
+import static org.lwjgl.opengl.GL45.GL_TRIANGLE_STRIP;
 
 /**
  * Manages everything. Contains the main loop.
@@ -32,7 +34,7 @@ import static org.lwjgl.opengl.GL45.*;
 public class Example2d extends GameBase {
     public Window window = new Window();
     final Dimension SCREEN_SIZE = new Dimension(900, 400);
-    final float[] PROJECTION_MATRIX = BoilerplateConstants.create2dProjectionMatrix(SCREEN_SIZE);
+    CameraOrtho camera = new CameraOrtho(new Dimension(SCREEN_SIZE.width, SCREEN_SIZE.height));
 
     public static boolean debugMode = false;
 
@@ -53,13 +55,13 @@ public class Example2d extends GameBase {
     TextObject to2;
     TextRenderer textRenderer = new TextRenderer();
 
-    Vector2f mousePos = new Vector2f();
-    Vector2f mousePosOnClick = new Vector2f();
+//    Vector2f mousePos = new Vector2f();
+//    Vector2f mousePosOnClick = new Vector2f();
 
-    Vector2f viewPos = new Vector2f();
-    float viewScale = 1f;
-    float scaleAddition = .1f;
-    boolean forceUpdateView = false;
+//    Vector2f viewPos = new Vector2f();
+//    float viewScale = 1f;
+//    float scaleAddition = .1f;
+//    boolean forceUpdateView = false;
 
     boolean[] heldMouseKeys = new boolean[8];
     boolean[] heldKeys = new boolean[350];
@@ -80,12 +82,17 @@ public class Example2d extends GameBase {
         winOps.initWindowSize = SCREEN_SIZE;
         window.quickSetupAndShow(winOps);
 
+        camera.setupUniformBuffer();
         FontManager.init();
         FontManager.loadFont(Font.MONOSPACED, Font.BOLD, 14, true);
-        FontManager.generateAndBindAllFonts(null);
+        FontManager.generateAndBindAllFonts();
+
+        shMain = new ShaderProgram();
+        shMain.autoInitializeShadersMulti("shaders/2d_main.glsl");
+        new Texture2d("res/textures/explosion.png").bindToTexArray(2, shMain);
+        new Texture2d("res/textures/closed.png").bindToTexArray(3, shMain);
 
         bindEvents();
-        setupShaders();
         setupBuffers();
     }
 
@@ -107,14 +114,14 @@ public class Example2d extends GameBase {
 
                 switch (key) {
                     case GLFW_KEY_ESCAPE -> this.window.setToClose();
-                    case GLFW_KEY_E -> addToViewScale(-scaleAddition, false);
-                    case GLFW_KEY_Q -> addToViewScale(scaleAddition, false);
-                    case GLFW_KEY_R -> {
-                        if (heldMouseKeys[GLFW_MOUSE_BUTTON_1]) break;
-                        viewPos.set(0);
-                        viewScale = 1;
-                        forceUpdateView = true;
-                    }
+//                    case GLFW_KEY_E -> addToViewScale(-scaleAddition, false);
+//                    case GLFW_KEY_Q -> addToViewScale(scaleAddition, false);
+//                    case GLFW_KEY_R -> {
+//                        if (heldMouseKeys[GLFW_MOUSE_BUTTON_1]) break;
+//                        viewPos.set(0);
+//                        viewScale = 1;
+//                        forceUpdateView = true;
+//                    }
 
                     case GLFW_KEY_TAB -> toggleDebug();
                 }
@@ -129,9 +136,9 @@ public class Example2d extends GameBase {
             if (action == GLFW_PRESS) {
                 heldMouseKeys[button] = true;
 
-                if (button == GLFW_MOUSE_BUTTON_1) {
-                    mousePosOnClick.set(mousePos.add(viewPos, new Vector2f()));
-                }
+//                if (button == GLFW_MOUSE_BUTTON_1) {
+//                    mousePosOnClick.set(mousePos.add(viewPos, new Vector2f()));
+//                }
             }
 
             if (action == GLFW_RELEASE) {
@@ -140,10 +147,12 @@ public class Example2d extends GameBase {
         });
 
         glfwSetScrollCallback(window.handle, (window, xOffset, yOffset) -> {
-            if (yOffset != 0.0) addToViewScale((float) (scaleAddition * Math.clamp(-yOffset, -1, 1)), true);
+//            if (yOffset != 0.0) addToViewScale((float) (scaleAddition * Math.clamp(-yOffset, -1, 1)), true);
         });
 
-        glfwSetCursorPosCallback(window.handle, (window, xPos, yPos) -> mousePos.set((float) xPos, (float) yPos));
+        glfwSetCursorPosCallback(window.handle, (window, xPos, yPos) -> {
+//            mousePos.set((float) xPos, (float) yPos)
+        });
     }
 
     public void setupBuffers() {
@@ -169,7 +178,7 @@ public class Example2d extends GameBase {
         to2 = new TextObject(1, "", new Vector2f(5, 50), Color.WHITE, Color.BLACK);
         to1.setBgMargin(new Vector2f(5));
         to2.setBgMargin(new Vector2f(5));
-        textRenderer.setupBufferObjects();
+        textRenderer.setupDefaultShader(camera);
         textRenderer.pushTextObject(to1, to2);
 
         // CIRCLE BUFFERS
@@ -189,19 +198,19 @@ public class Example2d extends GameBase {
         vbCircles.bufferData(builderCircles);
     }
 
-    /** Must be called after window is visible */
-    public void setupShaders() {
-//        shMain.useDemoShader();
-//        shCircles.useCircleShader();
-
-        new Texture2d("textures/explosion.png").bindToTexArray(2, shMain);
-        new Texture2d("textures/closed.png").bindToTexArray(3, shMain);
-
-//        shMain.uniformResolutionData(SCREEN_SIZE, PROJECTION_MATRIX);
-        shMain.uniform1f("viewScale", viewScale);
-//        shCircles.uniformResolutionData(SCREEN_SIZE, PROJECTION_MATRIX);
-        shCircles.uniform1f("viewScale", viewScale);
-    }
+//    /** Must be called after window is visible */
+//    public void setupShaders() {
+////        shMain.useDemoShader();
+////        shCircles.useCircleShader();
+//
+//        new Texture2d("textures/explosion.png").bindToTexArray(2, shMain);
+//        new Texture2d("textures/closed.png").bindToTexArray(3, shMain);
+//
+////        shMain.uniformResolutionData(SCREEN_SIZE, PROJECTION_MATRIX);
+////        shMain.uniform1f("viewScale", viewScale);
+////        shCircles.uniformResolutionData(SCREEN_SIZE, PROJECTION_MATRIX);
+////        shCircles.uniform1f("viewScale", viewScale);
+//    }
 
     public void updateFpsAndDebugText() {
         // updates every second
@@ -213,24 +222,16 @@ public class Example2d extends GameBase {
         }
 
         // debug string
-        BufferBuilder2f textBuff = textRenderer.getBufferBuilder();
-        to1.setString("FPS: %s, Elapsed: %s [debug (tab): %s]\nView [pos:%.0f,%.0f, scale:%.2f] (r)eset",
+        to1.setString("FPS: %s, Elapsed: %s [debug (tab): %s]\nView [pos:%.0f,%.0f, captureSize:%s] (r)eset",
                 fps, secondsElapsed, debugMode,
-                viewPos.x, viewPos.y, viewScale
+                camera.pos.x, camera.pos.y, camera.captureSize
         );
         to2.setString("""
                         Buffers:\
 
-                         - text [s:%s, v:%s, f:%s/%s (%.5f)]\
-
                          - main [s:%s, v:%s, f:%s/%s (%.5f)]\
 
                          - circles [s:%s, v:%s, f:%s/%s (%.5f)]""",
-                textBuff.getSeparationsCount(),  // note: cause we're using the text buffers own values in this text
-                textBuff.getVertexCount(),       // object it'll need to re-build itself a few extra times than normal
-                textBuff.getFloatCount(),
-                textBuff.getBufferSize(),
-                textBuff.getCurrentFullnessPercent(),
                 builderMain.getSeparationsCount(),
                 builderMain.getVertexCount(),
                 builderMain.getFloatCount(),
@@ -244,39 +245,44 @@ public class Example2d extends GameBase {
         );
     }
 
-    public void addToViewScale(float addition, boolean relativeToMouse) {
-        // mouse or middle of screen
-        Vector2f relativeTo = relativeToMouse ? mousePos : new Vector2f(SCREEN_SIZE.width, SCREEN_SIZE.height).mul(.5f);
-        viewPos.add(relativeTo.mul(viewScale, new Vector2f()).sub(relativeTo.mul(viewScale+addition, new Vector2f())));
+//    public void addToViewScale(float addition, boolean relativeToMouse) {
+//        // mouse or middle of screen
+//        Vector2f relativeTo = relativeToMouse ? mousePos : new Vector2f(SCREEN_SIZE.width, SCREEN_SIZE.height).mul(.5f);
+//        viewPos.add(relativeTo.mul(viewScale, new Vector2f()).sub(relativeTo.mul(viewScale+addition, new Vector2f())));
+//
+//        viewScale += addition;
+//        forceUpdateView = true;
+//    }
 
-        viewScale += addition;
-        forceUpdateView = true;
-    }
-
-    public void updateViewPos(double dt) {
-        Vector2f addition = new Vector2f();
-
-        // mouse prioritised over keys
-        if (heldMouseKeys[GLFW_MOUSE_BUTTON_1]) {
-            addition = mousePos.sub(mousePosOnClick, new Vector2f()).negate();
-            addition.sub(viewPos);
-        }
-
-        if (forceUpdateView || !addition.equals(new Vector2f())) {
-            viewPos.add(addition);
-            shMain.uniform2f("viewPos", viewPos.x, viewPos.y);
-            shMain.uniform1f("viewScale", viewScale);
-
-            shCircles.uniform2f("viewPos", viewPos.x, viewPos.y);
-            shCircles.uniform1f("viewScale", viewScale);
-            forceUpdateView = false;
-        }
-    }
+//    public void updateViewPos(double dt) {
+//        Vector2f addition = new Vector2f();
+//
+//        // mouse prioritised over keys
+//        if (heldMouseKeys[GLFW_MOUSE_BUTTON_1]) {
+//            addition = mousePos.sub(mousePosOnClick, new Vector2f()).negate();
+//            addition.sub(viewPos);
+//        }
+//
+//        if (forceUpdateView || !addition.equals(new Vector2f())) {
+//            viewPos.add(addition);
+//            shMain.uniform2f("viewPos", viewPos.x, viewPos.y);
+//            shMain.uniform1f("viewScale", viewScale);
+//
+//            shCircles.uniform2f("viewPos", viewPos.x, viewPos.y);
+//            shCircles.uniform1f("viewScale", viewScale);
+//            forceUpdateView = false;
+//        }
+//    }
 
     public void toggleDebug() {
         debugMode = !debugMode;
         shMain.uniform1i("debugMode", debugMode ? 1:0);
         shCircles.uniform1i("debugMode", debugMode ? 1:0);
+    }
+
+    public void update(double dt) {
+        camera.processKeyInputs(window, dt);
+        camera.updateUniformBlock();
     }
 
     public void render() {
@@ -287,8 +293,8 @@ public class Example2d extends GameBase {
         shMain.uniform1f("time", (float) glfwGetTime());
         vaMain.drawArrays(debugMode ? GL_LINE_STRIP : GL_TRIANGLE_STRIP, builderCircles.getVertexCount());
 
-        shCircles.bind();
-        vaCircles.drawInstanced(GL_TRIANGLES, 3, builderCircles.getVertexCount());
+//        shCircles.bind();
+//        vaCircles.drawInstanced(GL_TRIANGLES, 3, builderCircles.getVertexCount());
 
         textRenderer.draw();
 
@@ -300,7 +306,8 @@ public class Example2d extends GameBase {
         frameCounter++;
 
         glfwPollEvents();
-        updateViewPos(dt);
+//        updateViewPos(dt);
+        update(dt);
         updateFpsAndDebugText();
         render();
     }

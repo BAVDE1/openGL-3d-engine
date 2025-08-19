@@ -1,11 +1,13 @@
 package boilerplate.rendering.text;
 
 import boilerplate.common.BoilerplateConstants;
+import boilerplate.common.BoilerplateShaders;
 import boilerplate.models.Model;
-import boilerplate.rendering.buffers.VertexArray;
-import boilerplate.rendering.buffers.VertexArrayBuffer;
+import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.buffers.VertexLayout;
-import boilerplate.rendering.builders.BufferBuilder2f;
+import boilerplate.rendering.camera.Camera;
+import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL45;
 
 import java.util.ArrayList;
 
@@ -16,27 +18,24 @@ import java.util.ArrayList;
 public class TextRenderer {
     private final ArrayList<TextObject> textObjects = new ArrayList<>();
 
-    private VertexArray va;
-    private VertexArrayBuffer vb;
-    private BufferBuilder2f sb;
-
     private final Model model = new Model();
 
-    private boolean hasBeenModified = false;
-
-    public VertexLayout vertexLayout = FontManager.getTextVertexLayout();
     public TextObject.MeshBuilder textObjectMeshBuilder = TextObject.getDefaultMeshBuilder();
+    public VertexLayout vertexLayout = FontManager.defaultVertexLayout();
+    public ShaderProgram textShader = new ShaderProgram();
+
+    private boolean hasBeenModified = false;
 
     /**
      * after GL context created
      */
-    public void setupBufferObjects() {
-        va = new VertexArray(true);
-        vb = new VertexArrayBuffer(true);
-        sb = new BufferBuilder2f(true, FontManager.textLayoutAdditionalVerts());
-
-        va.bindBuffer(vb);
-        va.pushLayout(FontManager.getTextVertexLayout());
+    public void setupDefaultShader(Camera camera) {
+        textShader.genProgram();
+        textShader.attachShader(String.format(BoilerplateShaders.Text2DVertex, camera.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.Text2DVertex");
+        textShader.attachShader(BoilerplateShaders.Text2DFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders.Text2DFragment");
+        textShader.linkProgram();
+        camera.bindShaderToUniformBlock(textShader);
+        textShader.uniformTexture("fontTexture", FontManager.getFinalTexture(), FontManager.FONT_TEXTURE_SLOT);
     }
 
     private void buildMeshes() {
@@ -50,18 +49,21 @@ public class TextRenderer {
         hasBeenModified = false;
     }
 
-    public void delete() {
-        if (va != null) va.delete();
-        if (vb != null) vb.delete();
-    }
-
     public void draw() {
         if (hasBeenModified) buildMeshes();
 
         if (!model.meshes.isEmpty()) {
-            FontManager.bindText2dShader();
-            model.draw(FontManager.textShader2d, 0);
+            textShader.bind();
+            model.draw(textShader, 0);
         }
+    }
+
+    public Matrix4f getModelTransform() {
+        return model.modelTransform;
+    }
+
+    public void setModelTransform(Matrix4f matrix4f) {
+        model.modelTransform = matrix4f;
     }
 
     public ArrayList<TextObject> getTextObjects() {
@@ -90,9 +92,5 @@ public class TextRenderer {
 
     public void setHasBeenModified(boolean val) {
         hasBeenModified = val;
-    }
-
-    public BufferBuilder2f getBufferBuilder() {
-        return sb;
     }
 }

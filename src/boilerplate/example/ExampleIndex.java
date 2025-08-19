@@ -6,9 +6,9 @@ import boilerplate.common.TimeStepper;
 import boilerplate.common.Window;
 import boilerplate.models.Material;
 import boilerplate.models.Model;
-import boilerplate.rendering.camera.CameraOrtho;
 import boilerplate.rendering.Renderer;
 import boilerplate.rendering.ShaderProgram;
+import boilerplate.rendering.camera.CameraOrtho;
 import boilerplate.rendering.text.FontManager;
 import boilerplate.rendering.text.TextObject;
 import boilerplate.rendering.text.TextRenderer;
@@ -53,9 +53,10 @@ public class ExampleIndex extends GameBase {
         camera.setupUniformBuffer();
         FontManager.init();
         FontManager.loadFont(Font.MONOSPACED, Font.BOLD, 20, true);
-        FontManager.generateAndBindAllFonts(camera);
+        FontManager.generateAndBindAllFonts();
 
         modelShader.autoInitializeShadersMulti("shaders/2d_shapes.glsl");
+        camera.bindShaderToUniformBlock(modelShader);
 
         ParShapesMesh cube = ParShapes.par_shapes_create_cube();
         assert cube != null;
@@ -92,13 +93,13 @@ public class ExampleIndex extends GameBase {
         TextObject to2 = new TextObject(1, "[o]\n2d example", new Vector2f(80, 80), Color.CYAN);
         to1.setAlignment(TextObject.ALIGN_MIDDLE);
         to2.setAlignment(TextObject.ALIGN_MIDDLE);
-        textRenderer.setupBufferObjects();
+        textRenderer.setupDefaultShader(camera);
         textRenderer.pushTextObject(to1, to2);
+        textRenderer.setModelTransform(new Matrix4f().identity().scale(1f/60f, 1f/60f, 1));
     }
 
     private void clearGlContext() {
         Logging.debug("Deleting GL values...");
-        textRenderer.delete();
         FontManager.deleteAll();
         Texture2d.deleteAll();
     }
@@ -125,9 +126,9 @@ public class ExampleIndex extends GameBase {
         Renderer.enableDepthTest();
         Renderer.enableFaceCulling();
 
-        cubeModel1.modelTransform = new Matrix4f().identity().translate(-1.3f, -.5f, 10).rotateX(-.3f).rotateY((float) (Math.PI * glfwGetTime() * .6f));
+        cubeModel1.modelTransform = new Matrix4f().identity().translate(-1.3f, -.5f, 2).rotateX(-.3f).rotateY((float) (Math.PI * glfwGetTime() * .6f));
         cubeModel1.draw(modelShader, 0);
-        cubeModel2.modelTransform = new Matrix4f().identity().translate(1.3f, -.5f, 10).rotateY((float) (Math.PI * Math.cos(glfwGetTime()) * .5f));
+        cubeModel2.modelTransform = new Matrix4f().identity().translate(1.3f, -.5f, 2).rotateY((float) (Math.PI * Math.cos(glfwGetTime()) * .5f));
         cubeModel2.draw(modelShader, 0);
 
         textRenderer.draw();

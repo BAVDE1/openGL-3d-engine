@@ -5,19 +5,23 @@ layout(location = 0) in vec2 position;
 layout(location = 1) in float mode;
 layout(location = 2) in vec3 modeVars;
 
-uniform vec2 resolution;
-uniform mat4 projectionMatrix;
+layout (std140) uniform CameraView {
+    mat4 projection;
+    mat4 view;
+};
 
-uniform highp float time;
-uniform vec2 viewPos;
-uniform float viewScale;
+//uniform vec2 resolution;
+//uniform mat4 projectionMatrix;
+
+//uniform highp float time;
+//uniform vec2 viewPos;
+//uniform float viewScale;
 
 out float v_mode;
 out vec3 v_modeVars;
 
 void main() {
-    vec4 pos = vec4((position.xy - viewPos.xy) / viewScale, 1, 1);
-    gl_Position = pos * projectionMatrix;
+    gl_Position = projection * view * vec4(position.xy / 900, 1, 1);
 
     v_mode = mode;
     v_modeVars = modeVars;

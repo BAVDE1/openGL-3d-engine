@@ -7,12 +7,17 @@ layout(location = 1) in float radius;
 layout(location = 2) in float innerRadius;
 layout(location = 3) in vec3 colour;
 
-uniform vec2 resolution;
-uniform mat4 projectionMatrix;
+layout (std140) uniform CameraView {
+    mat4 projection;
+    mat4 view;
+};
 
-uniform highp float time;
-uniform vec2 viewPos;
-uniform float viewScale;
+//uniform vec2 resolution;
+//uniform mat4 projectionMatrix;
+//
+//uniform highp float time;
+//uniform vec2 viewPos;
+//uniform float viewScale;
 
 out vec2 v_circlePos;
 out float v_radius;
@@ -26,7 +31,7 @@ vec2 TRI_POSITIONS[3] = vec2[3] (
 );
 
 void main() {
-    vec2 circlePos = (circlePosition - viewPos) / viewScale;
+    vec2 circlePos = projection * view * circlePosition;
     float scaledRadius = abs(radius / viewScale);
 
     vec2 radiusMultiplier = TRI_POSITIONS[gl_VertexID % 3];
@@ -36,9 +41,9 @@ void main() {
     );
     gl_Position = vec4(pos, 1, 1) * projectionMatrix;
 
-    v_circlePos = vec2(circlePos.x, resolution.y - circlePos.y);
+    v_circlePos = vec2(circlePos.x, circlePos.y);
     v_radius = scaledRadius;
-    v_innerRadius = abs(innerRadius / viewScale);
+    v_innerRadius = abs(innerRadius);
     v_colour = colour;
 }
 

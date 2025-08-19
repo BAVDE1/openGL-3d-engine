@@ -1,13 +1,9 @@
 package boilerplate.rendering.text;
 
-import boilerplate.common.BoilerplateShaders;
-import boilerplate.rendering.camera.CameraOrtho;
-import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.buffers.VertexLayout;
 import boilerplate.rendering.textures.Texture2d;
 import boilerplate.utility.Logging;
 import org.joml.Vector2f;
-import org.lwjgl.opengl.GL45;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -176,9 +172,6 @@ public class FontManager {
     private final static ArrayList<LoadedFont> allLoadedFonts = new ArrayList<>();
     private final static HashMap<String, Integer> loadedFontUids = new HashMap<>();
 
-    private static VertexLayout textVertexLayout = defaultTextLayout();
-    public static ShaderProgram textShader2d = new ShaderProgram();
-
     public static int fullWidth = 0, fullHeight = 0;
     private static Texture2d finalTexture;
     private static boolean initialized = false;
@@ -235,7 +228,7 @@ public class FontManager {
     }
 
     /** generate all font images onto one universal image atlas at their y offsets */
-    public static void generateAndBindAllFonts(CameraOrtho camera) {
+    public static void generateAndBindAllFonts() {
         BufferedImage fullImage = new BufferedImage(fullWidth, fullHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = fullImage.createGraphics();
 
@@ -249,21 +242,10 @@ public class FontManager {
         finalTexture = new Texture2d(fullImage);
         Logging.debug("%s fonts generated, texture bound to slot %s", allLoadedFonts.size(), FONT_TEXTURE_SLOT);
 
-        setupTextShader2d(camera);
-
         if (writeFontsToFile) Texture2d.writeToFile(fullImage);
     }
 
-    private static void setupTextShader2d(CameraOrtho camera) {
-        textShader2d.genProgram();
-        textShader2d.attachShader(String.format(BoilerplateShaders.Text2DVertex, camera.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.Text2DVertex");
-        textShader2d.attachShader(BoilerplateShaders.Text2DFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders.Text2DFragment");
-        textShader2d.linkProgram();
-        camera.bindShaderToUniformBlock(textShader2d);
-        textShader2d.uniformTexture("fontTexture", finalTexture, FONT_TEXTURE_SLOT);
-    }
-
-    private static VertexLayout defaultTextLayout() {
+    public static VertexLayout defaultVertexLayout() {
         return new VertexLayout(
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_POSITION),
                 new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 2, VertexLayout.HINT_TEX_POS),
@@ -272,13 +254,6 @@ public class FontManager {
     }
 
     public static int textLayoutAdditionalVerts() {return 6;}
-    public static VertexLayout getTextVertexLayout() {
-        return textVertexLayout;
-    }
-
-    public static void bindText2dShader() {
-        textShader2d.bind();
-    }
 
     public static LoadedFont getLoadedFont(int loadedFontId) {
         if (loadedFontId < 0 || loadedFontId > allLoadedFonts.size() - 1) {
@@ -296,15 +271,15 @@ public class FontManager {
         return loadedFontUids.get(loadedFontName);
     }
 
+    public static Texture2d getFinalTexture() {
+        return finalTexture;
+    }
+
     public static void deleteAll() {
         finalTexture.delete();
-        textShader2d.delete();
 
         allLoadedFonts.clear();
         loadedFontUids.clear();
-
-        textVertexLayout = new VertexLayout();
-        textShader2d = new ShaderProgram();
 
         fullWidth = 0;
         fullHeight = 0;
