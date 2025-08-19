@@ -34,12 +34,12 @@ public class CameraOrtho extends Camera {
             new CameraKeyAction(GLFW_KEY_Q, speed -> up.rotateAxis(-speed, forward.x, forward.y, forward.z))
     ));
 
-    public CameraOrtho(Dimension aspectSize) {
-        this.captureSize = aspectSize;
+    public CameraOrtho(Dimension captureSize) {
+        this.captureSize = captureSize;
     }
 
-    public CameraOrtho(Dimension aspectSize, Vector3f initialPos) {
-        this(aspectSize);
+    public CameraOrtho(Dimension captureSize, Vector3f initialPos) {
+        this(captureSize);
         pos = new Vector3f(initialPos);
     }
 

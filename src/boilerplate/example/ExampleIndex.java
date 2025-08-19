@@ -15,7 +15,6 @@ import boilerplate.rendering.textures.Texture2d;
 import boilerplate.utility.Logging;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
-import org.lwjgl.opengl.GL45;
 import org.lwjgl.util.par.ParShapes;
 import org.lwjgl.util.par.ParShapesMesh;
 
@@ -26,13 +25,13 @@ import static org.lwjgl.opengl.GL45.glDebugMessageCallback;
 
 public class ExampleIndex extends GameBase {
     public boilerplate.common.Window window = new Window();
-    final Dimension SCREEN_SIZE = new Dimension(500, 500);
+    final Dimension SCREEN_SIZE = new Dimension(500, 300);
 
-    CameraOrtho camera = new CameraOrtho(new Dimension(3, 3));
+    CameraOrtho camera = new CameraOrtho(new Dimension(SCREEN_SIZE.width / 150, SCREEN_SIZE.height / 150));
     TextRenderer textRenderer = new TextRenderer();
 
     ShaderProgram ms = new ShaderProgram();
-    Model m = new Model(Model.defaultShapeVertexLayout());
+    Model cubeModel = new Model(Model.defaultShapeVertexLayout());
 
     boolean open2d = false;
     boolean open3d = false;
@@ -55,12 +54,12 @@ public class ExampleIndex extends GameBase {
         FontManager.generateAndBindAllFonts(camera);
 
         ms.autoInitializeShadersMulti("shaders/2d_shapes.glsl");
-//        ParShapesMesh cube = ParShapes.par_shapes_create_cube();
-//        assert cube != null;
-//        ParShapes.par_shapes_translate(cube, -.5f, -.5f, -.5f);
-//        ParShapes.par_shapes_unweld(cube, true);
-//        ParShapes.par_shapes_compute_normals(cube);
-//        m.loadShape(cube);
+        ParShapesMesh cube = ParShapes.par_shapes_create_cube();
+        assert cube != null;
+        ParShapes.par_shapes_translate(cube, -.5f, -.5f, -.5f);
+        ParShapes.par_shapes_unweld(cube, true);
+        ParShapes.par_shapes_compute_normals(cube);
+        cubeModel.loadShape(cube);
 
         bindEvents();
         setupBuffers();
@@ -85,13 +84,12 @@ public class ExampleIndex extends GameBase {
     }
 
     public void setupBuffers() {
-        TextObject to1 = new TextObject(1, "q\n\nq  aa", new Vector2f(), Color.YELLOW, Color.BLUE);
-//        TextObject to2 = new TextObject(1, "1\n2", new Vector2f(0, 60), Color.CYAN);
-        to1.setBgMargin(new Vector2f(10, 5));
+        TextObject to1 = new TextObject(1, "[p]\n3d example", new Vector2f(-80, 80), Color.YELLOW);
+        TextObject to2 = new TextObject(1, "[o]\n2d example", new Vector2f(80, 80), Color.CYAN);
         to1.setAlignment(TextObject.ALIGN_MIDDLE);
-//        to2.setAlignment(TextObject.ALIGN_MIDDLE);
+        to2.setAlignment(TextObject.ALIGN_MIDDLE);
         textRenderer.setupBufferObjects();
-        textRenderer.pushTextObject(to1);
+        textRenderer.pushTextObject(to1, to2);
     }
 
     private void clearGlContext() {
@@ -121,9 +119,9 @@ public class ExampleIndex extends GameBase {
     public void render() {
         Renderer.clearCDS();
         Renderer.enableDepthTest();
-//        Renderer.enableFaceCulling();
-//        m.modelTransform = new Matrix4f().identity().translate(0, 0, 10).rotateX(-.3f).rotateY((float) (Math.PI * glfwGetTime() * .6f));
-//        m.draw(ms, 0);
+        Renderer.enableFaceCulling();
+        cubeModel.modelTransform = new Matrix4f().identity().translate(-1.3f, -.5f, 10).rotateX(-.3f).rotateY((float) (Math.PI * glfwGetTime() * .6f));
+        cubeModel.draw(ms, 0);
         textRenderer.draw();
         Renderer.finish(window);
     }

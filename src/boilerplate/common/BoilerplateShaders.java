@@ -23,7 +23,7 @@ public class BoilerplateShaders {
             out vec4 v_texColour;
             
             void main() {
-                gl_Position = projection * view * vec4(-pos.xy / 50, pos.z, 1);
+                gl_Position = projection * view * vec4(pos.xy / 60, pos.z, 1);
                 v_texturePos = texturePos;
                 v_texColour = texColour;
             }

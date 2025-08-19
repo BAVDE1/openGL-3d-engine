@@ -4,14 +4,10 @@ import boilerplate.common.BoilerplateConstants;
 import boilerplate.models.Mesh;
 import boilerplate.rendering.buffers.VertexLayout;
 import boilerplate.rendering.builders.BufferBuilder2f;
-import boilerplate.rendering.builders.Shape2d;
-import boilerplate.rendering.builders.ShapeMode;
 import boilerplate.utility.Logging;
 import org.joml.Vector2f;
-import org.joml.Vector4f;
 
 import java.awt.*;
-import java.util.Arrays;
 import java.util.Objects;
 
 public class TextObject {
@@ -128,50 +124,6 @@ public class TextObject {
         int bgSize = hasBg ? getLinesCount() * 6 * Integer.BYTES : 0;
         return charsSize + bgSize;
     }
-
-//    public float[] buildStrip() {
-//        if (!hasChanged) return sb.getFloats();  // don't even bother re-building
-//
-//        sb.clear();
-//        bgSb.clear();
-//
-//        FontManager.LoadedFont font = FontManager.getLoadedFont(loadedFontId);
-//        int genericHeight = (int) (font.getLineHeight() * scale);
-//        int yAddition = genericHeight + ySpacing;
-//
-//        String[] lines = string.split("\n");
-//
-//        int accumulatedY = 0;
-//        for (String line : lines) {
-//            if (line.isEmpty()) {
-//                accumulatedY += genericHeight + ySpacing;
-//                continue;
-//            }
-//
-//            float lineWidth = font.findLineWidth(line) * scale;
-//            Vector2f linePos = new Vector2f(alignment == 0 ? pos.x : pos.x - (lineWidth * (1f / alignment)), pos.y + accumulatedY);
-//
-//            // line background
-//            if (bgCol.getAlpha() > BoilerplateConstants.EPSILON) {
-//                Vector2f size = new Vector2f(lineWidth, yAddition);
-//                if (!seamlessBgLines) size.y -= ySpacing;
-//
-//                float[] color = new float[]{-1, -1, bgCol.getRed(), bgCol.getGreen(), bgCol.getBlue(), bgCol.getAlpha()};
-//                Shape2d.Poly2d p = Shape2d.createRect(linePos.sub(bgMargin, new Vector2f()), size.add(bgMargin.mul(2, new Vector2f()), new Vector2f()), new ShapeMode.Append(color));
-//                bgSb.pushSeparatedPolygon(p);
-//            }
-//
-//            float[] colorVars = new float[]{textColour.getRed(), textColour.getGreen(), textColour.getBlue(), textColour.getAlpha()};
-//            TextRenderer.pushTextToBuilder(sb, line, font, linePos, colorVars, scale);
-//            accumulatedY += yAddition;
-//        }
-//
-//        System.out.println(Arrays.toString(sb.getFloats()));
-//        hasChanged = false;
-//
-//        sb.prependBuffer(bgSb, true);
-//        return sb.getFloats();
-//    }
 
     public String getString() {
         return string;
@@ -321,19 +273,19 @@ public class TextObject {
                 int accumulatedY = 0;
                 for (String line : lines) {
                     if (line.isEmpty()) {
-                        accumulatedY += genericHeight + textObject.ySpacing;
+                        accumulatedY -= genericHeight + textObject.ySpacing;
                         continue;
                     }
 
                     float lineWidth = font.findLineWidth(line) * textObject.scale;
-                    Vector2f linePos = new Vector2f(textObject.alignment == 0 ? textObject.pos.x : textObject.pos.x - (lineWidth * (1f / textObject.alignment)), textObject.pos.y + accumulatedY);
+                    Vector2f linePos = new Vector2f(textObject.alignment == 0 ? textObject.pos.x : textObject.pos.x + (lineWidth * (1f / textObject.alignment)), textObject.pos.y + accumulatedY);
 
                     // line background
                     if (textObject.bgCol.getAlpha() > BoilerplateConstants.EPSILON)
                         buildBackground(textObject, linePos, lineWidth, yAddition);
 
                     buildLine(textObject, line, font, linePos);
-                    accumulatedY += yAddition;
+                    accumulatedY -= yAddition;
                 }
             }
 
@@ -341,53 +293,33 @@ public class TextObject {
             public void buildBackground(TextObject textObject, Vector2f linePos, float lineWidth, int yAddition) {
                 Vector2f size = new Vector2f(lineWidth, yAddition);
                 if (!textObject.seamlessBgLines) size.y -= textObject.ySpacing;
-
-
-//                float[] color = new float[]{-1, -1, textObject.bgCol.getRed(), textObject.bgCol.getGreen(), textObject.bgCol.getBlue(), textObject.bgCol.getAlpha()};
-//                Shape2d.Poly2d p = Shape2d.createRect(, , new Vector2f()), new ShapeMode.Append(color));
                 pushRect(textObject, linePos.sub(textObject.bgMargin, new Vector2f()), size.add(textObject.bgMargin.mul(2, new Vector2f())), new Vector2f(-1), new Vector2f(), textObject.bgCol, 1);
-//                bgSb.pushSeparatedPolygon(p);
             }
 
             @Override
             public void buildLine(TextObject textObject, String line, FontManager.LoadedFont font, Vector2f linePos) {
-//                float[] colorVars = new float[]{textColour.getRed(), textColour.getGreen(), textColour.getBlue(), textColour.getAlpha()};
-//                TextRenderer.pushTextToBuilder(sb, line, font, linePos, colorVars, scale);
                 int accumulatedX = 0;
-//                boolean separate = true;
                 for (char c : line.toCharArray()) {
                     FontManager.Glyph glyph = font.getGlyph(c);
                     Vector2f size = glyph.getSize().mul(textObject.scale);
 
                     if (c == ' ') {
-                        accumulatedX += (int) size.x;
+                        accumulatedX -= (int) size.x;
                         continue;
                     }
 
                     Vector2f topLeft = linePos.add(accumulatedX, 0, new Vector2f());
                     pushRect(textObject, topLeft, size, glyph.texTopLeft, glyph.texSize, textObject.textColour, 0);
-//                    Shape2d.Poly2d texturePoints = Shape2d.createRect(glyph.texTopLeft, glyph.texSize);
-//                    ShapeMode.UnpackAppend mode = new ShapeMode.UnpackAppend(texturePoints.toArray(), appendFloats);
-//                    Shape2d.Poly2d p = Shape2d.createRect(topLeft, size, mode);
-//
-//                    if (separate) {
-//                        sb.pushSeparatedPolygon(p);
-//                        System.out.println("sep");
-//                        separate = false;
-//                    } else {
-//                        sb.pushPolygon(p);
-//                        System.out.println("cont");
-//                    }
-                    accumulatedX += (int) size.x;
+                    accumulatedX -= (int) size.x;
                 }
             }
 
             @Override
             public void pushRect(TextObject textObject, Vector2f topLeft, Vector2f size, Vector2f texCoords, Vector2f texSize, Color colour, int zAddition) {
                 pushVertex(textObject, topLeft, texCoords, colour, zAddition);
-                pushVertex(textObject, topLeft.add(size.x, 0, new Vector2f()), texCoords.add(texSize.x, 0, new Vector2f()), colour, zAddition);
-                pushVertex(textObject, topLeft.add(size, new Vector2f()), texCoords.add(texSize, new Vector2f()), colour, zAddition);
-                pushVertex(textObject, topLeft.add(0, size.y, new Vector2f()), texCoords.add(0, texSize.y, new Vector2f()), colour, zAddition);
+                pushVertex(textObject, topLeft.sub(size.x, 0, new Vector2f()), texCoords.add(texSize.x, 0, new Vector2f()), colour, zAddition);
+                pushVertex(textObject, topLeft.sub(size, new Vector2f()), texCoords.add(texSize, new Vector2f()), colour, zAddition);
+                pushVertex(textObject, topLeft.sub(0, size.y, new Vector2f()), texCoords.add(0, texSize.y, new Vector2f()), colour, zAddition);
                 textObject.mesh.pushIndice(textObject.vertexCounter);
                 textObject.mesh.pushIndice(textObject.vertexCounter + 3);
                 textObject.mesh.pushIndice(textObject.vertexCounter + 2);
@@ -402,7 +334,8 @@ public class TextObject {
             public void pushVertex(TextObject textObject, Vector2f pos, Vector2f texCoords, Color colour, int zAddition) {
                 for (VertexLayout.Element element : textObject.parent.vertexLayout.elements) {
                     switch (element.hint) {
-                        case (VertexLayout.HINT_POSITION) -> textObject.mesh.pushFloats(pos.x, pos.y, textObject.z + zAddition);
+                        case (VertexLayout.HINT_POSITION) ->
+                                textObject.mesh.pushFloats(pos.x, pos.y, textObject.z + zAddition);
                         case (VertexLayout.HINT_TEX_POS) -> textObject.mesh.pushFloats(texCoords.x, texCoords.y);
                         case (VertexLayout.HINT_COLOUR) ->
                                 textObject.mesh.pushFloats(colour.getRed(), colour.getGreen(), colour.getBlue(), colour.getAlpha());

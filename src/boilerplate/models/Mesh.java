@@ -116,8 +116,6 @@ public class Mesh {
         va.bindBuffer(vb, veb);
         va.pushLayout(vertexLayout);
 
-        System.out.println(data);
-        System.out.println(indices);
         vb.bufferData(data);
         veb.bufferData(indices);
     }

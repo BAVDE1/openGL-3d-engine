@@ -1,21 +1,13 @@
 package boilerplate.rendering.text;
 
 import boilerplate.common.BoilerplateConstants;
-import boilerplate.models.Mesh;
 import boilerplate.models.Model;
 import boilerplate.rendering.buffers.VertexArray;
 import boilerplate.rendering.buffers.VertexArrayBuffer;
 import boilerplate.rendering.buffers.VertexLayout;
 import boilerplate.rendering.builders.BufferBuilder2f;
-import boilerplate.rendering.builders.Shape2d;
-import boilerplate.rendering.builders.ShapeMode;
-import boilerplate.rendering.textures.Texture2d;
-import boilerplate.utility.Logging;
-import org.joml.Vector2f;
 
 import java.util.ArrayList;
-
-import static org.lwjgl.opengl.GL45.*;
 
 /**
  * Renders (multiple) TentRenderer.TextObjects in its own auto-resizing buffer.
@@ -58,18 +50,6 @@ public class TextRenderer {
         hasBeenModified = false;
     }
 
-//    private void buildBuffer() {
-//        sb.clear();
-//
-//        for (TextObject to : textObjects) {
-//            if (to.getString().isEmpty() || to.getScale() < BoilerplateConstants.EPSILON) continue;
-//            sb.pushRawSeparatedFloats(to.buildStrip());
-//        }
-//
-//        vb.bufferData(sb);
-//        hasBeenModified = false;
-//    }
-
     public void delete() {
         if (va != null) va.delete();
         if (vb != null) vb.delete();
@@ -81,7 +61,6 @@ public class TextRenderer {
         if (!model.meshes.isEmpty()) {
             FontManager.bindText2dShader();
             model.draw(FontManager.textShader2d, 0);
-//            va.drawArrays(GL_LINE_STRIP, sb.getVertexCount());
         }
     }
 
@@ -116,42 +95,4 @@ public class TextRenderer {
     public BufferBuilder2f getBufferBuilder() {
         return sb;
     }
-
-//    public static void pushTextToBuilder(BufferBuilder2f sb, String text, FontManager.LoadedFont font, Vector2f pos, float[] appendFloats) {
-//        pushTextToBuilder(sb, text, font, pos, appendFloats, 1);
-//    }
-
-    /**
-     * Pushes all chars into the buffer
-     * Assumes that the VA looks like: `posX, posY, texturePosX, texturePosY, ...`
-     */
-//    public static void pushTextToBuilder(BufferBuilder2f sb, String text, FontManager.LoadedFont font, Vector2f pos, float[] appendFloats, float scale) {
-//        int accumulatedX = 0;
-//        boolean separate = true;
-//        for (char c : text.toCharArray()) {
-//            FontManager.Glyph glyph = font.getGlyph(c);
-//            Vector2f size = glyph.getSize().mul(scale);
-//
-//            if (c == ' ') {
-//                accumulatedX += (int) size.x;
-//                separate = true;
-//                continue;
-//            }
-//
-//            Vector2f topLeft = pos.add(accumulatedX, 0, new Vector2f());
-//            Shape2d.Poly2d texturePoints = Shape2d.createRect(glyph.texTopLeft, glyph.texSize);
-//            ShapeMode.UnpackAppend mode = new ShapeMode.UnpackAppend(texturePoints.toArray(), appendFloats);
-//            Shape2d.Poly2d p = Shape2d.createRect(topLeft, size, mode);
-//
-//            if (separate) {
-//                sb.pushSeparatedPolygon(p);
-//                System.out.println("sep");
-//                separate = false;
-//            } else {
-//                sb.pushPolygon(p);
-//                System.out.println("cont");
-//            }
-//            accumulatedX += (int) size.x;
-//        }
-//    }
 }
