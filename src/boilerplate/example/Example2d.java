@@ -19,6 +19,7 @@ import boilerplate.rendering.text.TextRenderer;
 import boilerplate.rendering.textures.Texture2d;
 import boilerplate.utility.Logging;
 import boilerplate.utility.MathUtils;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.lwjgl.opengl.GL45;
 
@@ -34,7 +35,8 @@ import static org.lwjgl.opengl.GL45.GL_TRIANGLE_STRIP;
 public class Example2d extends GameBase {
     public Window window = new Window();
     final Dimension SCREEN_SIZE = new Dimension(900, 400);
-    CameraOrtho camera = new CameraOrtho(new Dimension(SCREEN_SIZE.width, SCREEN_SIZE.height));
+    final Dimension CAPTURE_SIZE = new Dimension(SCREEN_SIZE.width / 200, SCREEN_SIZE.height / 200);
+    CameraOrtho camera = new CameraOrtho(CAPTURE_SIZE);
 
     public static boolean debugMode = false;
 
@@ -180,6 +182,7 @@ public class Example2d extends GameBase {
         to2.setBgMargin(new Vector2f(5));
         textRenderer.setupDefaultShader(camera);
         textRenderer.pushTextObject(to1, to2);
+        textRenderer.setModelTransform(new Matrix4f().identity().translate(CAPTURE_SIZE.width, CAPTURE_SIZE.height, 0).scale(1f/80, 1f/80, 1));
 
         // CIRCLE BUFFERS
         vbCircles.genId(); vaCircles.genId();

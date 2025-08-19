@@ -22,7 +22,7 @@ public class TextRenderer {
 
     public TextObject.MeshBuilder textObjectMeshBuilder = TextObject.getDefaultMeshBuilder();
     public VertexLayout vertexLayout = FontManager.defaultVertexLayout();
-    public ShaderProgram textShader = new ShaderProgram();
+    public ShaderProgram shader = new ShaderProgram();
 
     private boolean hasBeenModified = false;
 
@@ -30,12 +30,12 @@ public class TextRenderer {
      * after GL context created
      */
     public void setupDefaultShader(Camera camera) {
-        textShader.genProgram();
-        textShader.attachShader(String.format(BoilerplateShaders.Text2DVertex, camera.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.Text2DVertex");
-        textShader.attachShader(BoilerplateShaders.Text2DFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders.Text2DFragment");
-        textShader.linkProgram();
-        camera.bindShaderToUniformBlock(textShader);
-        textShader.uniformTexture("fontTexture", FontManager.getFinalTexture(), FontManager.FONT_TEXTURE_SLOT);
+        shader.genProgram();
+        shader.attachShader(String.format(BoilerplateShaders.Text2DVertex, camera.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.Text2DVertex");
+        shader.attachShader(BoilerplateShaders.Text2DFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders.Text2DFragment");
+        shader.linkProgram();
+        camera.bindShaderToUniformBlock(shader);
+        shader.uniformTexture("fontTexture", FontManager.getFinalTexture(), FontManager.FONT_TEXTURE_SLOT);
     }
 
     private void buildMeshes() {
@@ -53,8 +53,8 @@ public class TextRenderer {
         if (hasBeenModified) buildMeshes();
 
         if (!model.meshes.isEmpty()) {
-            textShader.bind();
-            model.draw(textShader, 0);
+            shader.bind();
+            model.draw(shader, 0);
         }
     }
 

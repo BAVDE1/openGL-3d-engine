@@ -132,4 +132,9 @@ public class Mesh {
         }
         va.drawElements(renderMode, veb, indicesCount);
     }
+
+    public void clearData() {
+        data.clear();
+        indices.clear();
+    }
 }

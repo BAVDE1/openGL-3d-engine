@@ -90,6 +90,7 @@ public class TextObject {
 
     public Mesh buildMesh() {
         if (!hasChanged) return mesh;
+        if (mesh != null) mesh.clearData();
 
         vertexCounter = 0;
         mesh = new Mesh(parent.vertexLayout);
@@ -298,6 +299,7 @@ public class TextObject {
 
             @Override
             public void buildLine(TextObject textObject, String line, FontManager.LoadedFont font, Vector2f linePos) {
+                System.out.println(line);
                 int accumulatedX = 0;
                 for (char c : line.toCharArray()) {
                     FontManager.Glyph glyph = font.getGlyph(c);
