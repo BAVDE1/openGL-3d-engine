@@ -6,6 +6,7 @@ import boilerplate.rendering.buffers.VertexArray;
 import boilerplate.rendering.buffers.VertexArrayBuffer;
 import boilerplate.rendering.buffers.VertexElementBuffer;
 import boilerplate.rendering.buffers.VertexLayout;
+import boilerplate.utility.Logging;
 import org.lwjgl.assimp.AIVector2D;
 import org.lwjgl.assimp.AIVector3D;
 import org.lwjgl.opengl.GL45;
@@ -38,6 +39,10 @@ public class Mesh {
     }
 
     public void allocateMemory(int verticesBytes, int indicesBytes) {
+        if (verticesBytes < 0) {
+            Logging.danger("cannot allocate negative memory, has the given shape mesh already been freed?");
+            return;
+        }
         data = MemoryUtil.memAlloc(verticesBytes);
         indices = MemoryUtil.memAlloc(indicesBytes);
     }

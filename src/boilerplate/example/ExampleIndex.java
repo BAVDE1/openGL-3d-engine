@@ -4,6 +4,7 @@ import boilerplate.common.BoilerplateConstants;
 import boilerplate.common.GameBase;
 import boilerplate.common.TimeStepper;
 import boilerplate.common.Window;
+import boilerplate.models.Material;
 import boilerplate.models.Model;
 import boilerplate.rendering.camera.CameraOrtho;
 import boilerplate.rendering.Renderer;
@@ -30,8 +31,9 @@ public class ExampleIndex extends GameBase {
     CameraOrtho camera = new CameraOrtho(new Dimension(SCREEN_SIZE.width / 150, SCREEN_SIZE.height / 150));
     TextRenderer textRenderer = new TextRenderer();
 
-    ShaderProgram ms = new ShaderProgram();
-    Model cubeModel = new Model(Model.defaultShapeVertexLayout());
+    ShaderProgram modelShader = new ShaderProgram();
+    Model cubeModel1 = new Model(Model.defaultShapeVertexLayout());
+    Model cubeModel2 = new Model(Model.defaultShapeVertexLayout());
 
     boolean open2d = false;
     boolean open3d = false;
@@ -53,13 +55,15 @@ public class ExampleIndex extends GameBase {
         FontManager.loadFont(Font.MONOSPACED, Font.BOLD, 20, true);
         FontManager.generateAndBindAllFonts(camera);
 
-        ms.autoInitializeShadersMulti("shaders/2d_shapes.glsl");
+        modelShader.autoInitializeShadersMulti("shaders/2d_shapes.glsl");
+
         ParShapesMesh cube = ParShapes.par_shapes_create_cube();
         assert cube != null;
         ParShapes.par_shapes_translate(cube, -.5f, -.5f, -.5f);
         ParShapes.par_shapes_unweld(cube, true);
         ParShapes.par_shapes_compute_normals(cube);
-        cubeModel.loadShape(cube);
+        cubeModel1.loadShape(cube, new Material(), false);
+        cubeModel2.loadShape(cube);
 
         bindEvents();
         setupBuffers();
@@ -120,8 +124,12 @@ public class ExampleIndex extends GameBase {
         Renderer.clearCDS();
         Renderer.enableDepthTest();
         Renderer.enableFaceCulling();
-        cubeModel.modelTransform = new Matrix4f().identity().translate(-1.3f, -.5f, 10).rotateX(-.3f).rotateY((float) (Math.PI * glfwGetTime() * .6f));
-        cubeModel.draw(ms, 0);
+
+        cubeModel1.modelTransform = new Matrix4f().identity().translate(-1.3f, -.5f, 10).rotateX(-.3f).rotateY((float) (Math.PI * glfwGetTime() * .6f));
+        cubeModel1.draw(modelShader, 0);
+        cubeModel2.modelTransform = new Matrix4f().identity().translate(1.3f, -.5f, 10).rotateY((float) (Math.PI * Math.cos(glfwGetTime()) * .5f));
+        cubeModel2.draw(modelShader, 0);
+
         textRenderer.draw();
         Renderer.finish(window);
     }

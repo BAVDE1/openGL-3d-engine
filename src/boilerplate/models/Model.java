@@ -149,24 +149,28 @@ public class Model {
     }
 
     public void loadShape(ParShapesMesh shapesMesh) {
-        loadShape(shapesMesh, new Material());
+        loadShape(shapesMesh, new Material(), true);
     }
 
     /**
     * Reuse already loaded materials
     */
     public void loadShape(ParShapesMesh shapesMesh, int materialIndex) {
-        loadShape(shapesMesh, materials.get(materialIndex));
+        loadShape(shapesMesh, materials.get(materialIndex), true);
     }
 
-    public void loadShape(ParShapesMesh shapesMesh, Material material) {
+    public void loadShape(ParShapesMesh shapesMesh, int materialIndex, boolean freeMesh) {
+        loadShape(shapesMesh, materials.get(materialIndex), freeMesh);
+    }
+
+    public void loadShape(ParShapesMesh shapesMesh, Material material, boolean freeMesh) {
         if (loaded == LOADED_MODEL) {
             Logging.warn("This model has already been loaded from a file, aborting.");
             return;
         }
 
         MeshProcessorShapes.processShape(this, shapesMesh, material);
-        ParShapes.par_shapes_free_mesh(shapesMesh);
+        if (freeMesh) ParShapes.par_shapes_free_mesh(shapesMesh);
         loaded = LOADED_SHAPE;
     }
 
