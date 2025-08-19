@@ -32,8 +32,7 @@ public class ExampleIndex extends GameBase {
     TextRenderer textRenderer = new TextRenderer();
 
     ShaderProgram modelShader = new ShaderProgram();
-    Model cubeModel1 = new Model(Model.defaultShapeVertexLayout());
-    Model cubeModel2 = new Model(Model.defaultShapeVertexLayout());
+    Model cubeModel = new Model(Model.defaultShapeVertexLayout());
 
     boolean open2d = false;
     boolean open3d = false;
@@ -63,8 +62,7 @@ public class ExampleIndex extends GameBase {
         ParShapes.par_shapes_translate(cube, -.5f, -.5f, -.5f);
         ParShapes.par_shapes_unweld(cube, true);
         ParShapes.par_shapes_compute_normals(cube);
-        cubeModel1.loadShape(cube, new Material(), false);
-        cubeModel2.loadShape(cube);
+        cubeModel.loadShape(cube, new Material(), false);
 
         bindEvents();
         setupBuffers();
@@ -126,10 +124,10 @@ public class ExampleIndex extends GameBase {
         Renderer.enableDepthTest();
         Renderer.enableFaceCulling();
 
-        cubeModel1.modelTransform = new Matrix4f().identity().translate(-1.3f, -.5f, 2).rotateX(-.3f).rotateY((float) (Math.PI * glfwGetTime() * .6f));
-        cubeModel1.draw(modelShader, 0);
-        cubeModel2.modelTransform = new Matrix4f().identity().translate(1.3f, -.5f, 2).rotateY((float) (Math.PI * Math.cos(glfwGetTime()) * .5f));
-        cubeModel2.draw(modelShader, 0);
+        cubeModel.modelTransform = new Matrix4f().identity().translate(-1.3f, -.5f, 2).rotateX(-.3f).rotateY((float) (Math.PI * glfwGetTime() * .6f));
+        cubeModel.draw(modelShader, 0);
+        cubeModel.modelTransform = new Matrix4f().identity().translate(1.3f, -.5f, 2).rotateY((float) (Math.PI * Math.cos(glfwGetTime()) * .5f));
+        cubeModel.draw(modelShader, 0);
 
         textRenderer.draw();
         Renderer.finish(window);
