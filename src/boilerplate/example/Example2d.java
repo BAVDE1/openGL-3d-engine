@@ -135,7 +135,9 @@ public class Example2d extends GameBase {
         shMain = new ShaderProgram();
         shMain.autoInitializeShadersMulti("res/shaders/2d_main.glsl");
         new Texture2d("res/textures/explosion.png").bindToTexArray(2, shMain);
-        new Texture2d("res/textures/closed.png").bindToTexArray(3, shMain);
+        Texture2d t = new Texture2d();
+        t.createTextureFromPath("res/textures/closed.png", 4);
+        t.bindToTexArray(3, shMain);
 
         bindEvents();
         setupBuffers();
@@ -163,6 +165,7 @@ public class Example2d extends GameBase {
                     case GLFW_KEY_P -> addToCaptureScale(-scaleAddition);
                     case GLFW_KEY_R -> {
                         if (heldMouseKeys[GLFW_MOUSE_BUTTON_1]) break;
+                        captureScale = 1;
                         camera.pos = new Vector3f(0);
                         camera.captureSize = CAPTURE_SIZE;
                         camera.up = new Vector3f(camera.worldUp);

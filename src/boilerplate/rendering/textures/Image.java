@@ -57,12 +57,16 @@ public class Image {
     }
 
     public static Image loadImageFromPathSTB(String path) {
+        return loadImageFromPathSTB(path, 0);
+    }
+
+    public static Image loadImageFromPathSTB(String path, int desiredChannels) {
         int[] width = new int[1];
         int[] height = new int[1];
         int[] channels = new int[1];
-        ByteBuffer data = STBImage.stbi_load(path, width, height, channels, 0);
+        ByteBuffer data = STBImage.stbi_load(path, width, height, channels, desiredChannels);
         if (data == null) Logging.danger("An error occurred when attempting to load image from '%s'.\n%s", path, stbi_failure_reason());
-        return new Image(data, width[0], height[0], channels[0]);
+        return new Image(data, width[0], height[0], desiredChannels == 0 ? channels[0] : desiredChannels);
     }
 
     public static Image bufferedImageToByteImage(BufferedImage bufferedImage) {

@@ -87,14 +87,15 @@ public class ExampleIndex extends GameBase {
     }
 
     public void setupBuffers() {
-        TextObject to1 = new TextObject(1, "[p]\n3d example", new Vector2f(-80, 80), Color.YELLOW, Color.RED);
-        TextObject to2 = new TextObject(1, "[o]\n2d example", new Vector2f(80, 80), Color.CYAN);
-        to1.setBgMargin(new Vector2f(10, 5));
+        TextObject to1 = new TextObject(1, "[p]erspective\n3d example", new Vector2f(-110, 100), Color.YELLOW);
+        TextObject to2 = new TextObject(1, "[o]rthographic\n2d example", new Vector2f(110, 100), Color.CYAN);
+        to1.setYSpacing(10);
+        to2.setYSpacing(10);
         to1.setAlignment(TextObject.ALIGN_MIDDLE);
         to2.setAlignment(TextObject.ALIGN_MIDDLE);
         textRenderer.setupDefaultShader(camera);
         textRenderer.pushTextObject(to1, to2);
-        textRenderer.setModelTransform(new Matrix4f().identity().scale(1f/60f, 1f/60f, 1));
+        textRenderer.setModelTransform(new Matrix4f().identity().scale(1f/80f, 1f/80f, 1));
     }
 
     private void clearGlContext() {

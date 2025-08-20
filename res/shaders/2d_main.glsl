@@ -59,7 +59,7 @@ void main() {
 
     if (m == 1) {
         int slot = int(v_modeVars.z);
-        colour = texture(textures[slot], v_modeVars.xy);
+        colour = vec4(texture(textures[slot], v_modeVars.xy).rgb, 1);
         return;
     }
 

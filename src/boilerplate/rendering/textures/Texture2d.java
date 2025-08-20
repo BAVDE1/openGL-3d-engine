@@ -58,7 +58,11 @@ public class Texture2d extends Texture {
     }
 
     public void createTextureFromPath(String path) {
-        Image image = Image.loadImageFromPathSTB(path);
+        createTextureFromPath(path, 0);
+    }
+
+    public void createTextureFromPath(String path, int desiredChannels) {
+        Image image = Image.loadImageFromPathSTB(path, desiredChannels);
         size = new Dimension(image.width, image.height);
         loadedPath = path;
         createTextureFromImage(image);
@@ -71,7 +75,7 @@ public class Texture2d extends Texture {
     }
 
     protected void createTextureFromImage(Image image) {
-        image.buffer.flip();  // flip to read mode for openGL
+        image.buffer.flip();
 
         genId();
         bind();
