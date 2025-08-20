@@ -31,18 +31,15 @@ vec2 TRI_POSITIONS[3] = vec2[3] (
 );
 
 void main() {
-    vec2 circlePos = projection * view * circlePosition;
-    float scaledRadius = abs(radius / viewScale);
-
     vec2 radiusMultiplier = TRI_POSITIONS[gl_VertexID % 3];
     vec2 pos = vec2(
-        circlePos.x + (scaledRadius * radiusMultiplier.x),
-        circlePos.y + (scaledRadius * radiusMultiplier.y)
+        circlePosition.x + (radius * radiusMultiplier.x),
+        circlePosition.y + (radius * radiusMultiplier.y)
     );
-    gl_Position = vec4(pos, 1, 1) * projectionMatrix;
+    gl_Position = projection * view * vec4(pos, 8, 1);
 
-    v_circlePos = vec2(circlePos.x, circlePos.y);
-    v_radius = scaledRadius;
+    v_circlePos = vec2(circlePosition.xy);
+    v_radius = radius;
     v_innerRadius = abs(innerRadius);
     v_colour = colour;
 }
@@ -50,7 +47,7 @@ void main() {
 //--- FRAG
 #version 450 core
 
-uniform vec2 resolution;
+//uniform vec2 resolution;
 uniform int debugMode;
 
 const float EPSILON = 0.0001;
@@ -62,8 +59,6 @@ in float v_innerRadius;
 in vec3 v_colour;
 
 out vec4 colour;
-
-vec2 invResolution = 1 / resolution;
 
 void main() {
     float dist = length(gl_FragCoord.xy - v_circlePos);
@@ -78,4 +73,5 @@ void main() {
     }
 
     colour.a += .3 * debugMode;
+    colour = vec4(1, 1, 1, 1);
 }

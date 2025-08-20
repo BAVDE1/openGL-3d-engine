@@ -1,11 +1,10 @@
 package boilerplate.rendering.builders;
 
 import boilerplate.common.BoilerplateConstants;
+import boilerplate.example.Example2d;
 import boilerplate.utility.Logging;
-import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-import java.awt.*;
 import java.nio.FloatBuffer;
 
 /**
@@ -192,7 +191,7 @@ public class BufferBuilder {
         }
 
         try {
-            if (mode instanceof ShapeMode.Demonstration demo) {
+            if (mode instanceof Example2d.Demonstration demo) {
                 Vector3f typeVar = demo.getVar(vertInx);
                 theArray[floatInx + i] = demo.type;
                 theArray[floatInx + i + 1] = typeVar.x;

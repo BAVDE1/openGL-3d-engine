@@ -8,7 +8,6 @@ import boilerplate.rendering.Renderer;
 import boilerplate.rendering.ShaderProgram;
 import boilerplate.rendering.buffers.VertexArray;
 import boilerplate.rendering.buffers.VertexArrayBuffer;
-import boilerplate.rendering.buffers.VertexLayout;
 import boilerplate.rendering.builders.BufferBuilder2f;
 import boilerplate.rendering.builders.Shape2d;
 import boilerplate.rendering.builders.ShapeMode;
@@ -21,9 +20,12 @@ import boilerplate.utility.Logging;
 import boilerplate.utility.MathUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL45;
 
 import java.awt.*;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL45.GL_LINE_STRIP;
@@ -33,10 +35,60 @@ import static org.lwjgl.opengl.GL45.GL_TRIANGLE_STRIP;
  * Manages everything. Contains the main loop.
  */
 public class Example2d extends GameBase {
+    /**
+     * THIS TYPE IS FOR DEMONSTRATION PURPOSES
+     * meant for use with the 2d_main shader
+     */
+    public static class Demonstration extends ShapeMode {
+        java.util.List<Vector3f> vars;
+        public int type;
+
+        public Demonstration() {
+            this(BoilerplateConstants.DEMO_MODE_NIL);
+        }
+
+        public Demonstration(int texSlot, Vector2f texTopLeft, Vector2f texSize) {
+            this(BoilerplateConstants.DEMO_MODE_TEX);
+            this.vars = java.util.List.of(new Vector3f[]{
+                    new Vector3f(texTopLeft, texSlot),
+                    new Vector3f(texTopLeft.add(texSize.x, 0, new Vector2f()), texSlot),
+                    new Vector3f(texTopLeft.add(0, texSize.y, new Vector2f()), texSlot),
+                    new Vector3f(texTopLeft.add(texSize, new Vector2f()), texSlot)
+            });
+        }
+
+        public Demonstration(Color col) {
+            this(BoilerplateConstants.DEMO_MODE_COL);
+            this.vars = List.of(new Vector3f[]{new Vector3f(col.getRed(), col.getGreen(), col.getBlue())});
+        }
+
+        public Demonstration(int mode) {
+            this.type = mode;
+        }
+
+        public Demonstration(int mode, Vector3f... modeVars) {
+            this(mode);
+            this.vars = Arrays.stream(modeVars).toList();
+        }
+
+        /**
+         * Get Vector3f at inx, or last (or empty Vector3f if no vars exist)
+         */
+        public Vector3f getVar(int inx) {
+            if (vars == null || vars.isEmpty()) return new Vector3f();
+            if (inx >= vars.size()) return vars.getLast();
+            return vars.get(inx);
+        }
+    }
+
     public Window window = new Window();
     final Vector2f SCREEN_SIZE = new Vector2f(900, 400);
+    final Vector2f CAPTURE_UI_SIZE = new Vector2f(SCREEN_SIZE.x / 200, SCREEN_SIZE.y / 200);
     final Vector2f CAPTURE_SIZE = new Vector2f(SCREEN_SIZE.x / 200, SCREEN_SIZE.y / 200);
+    CameraOrtho uiCamera = new CameraOrtho(CAPTURE_UI_SIZE);
     CameraOrtho camera = new CameraOrtho(CAPTURE_SIZE);
+
+    float captureScale = 1;
 
     public static boolean debugMode = false;
 
@@ -46,24 +98,12 @@ public class Example2d extends GameBase {
     VertexArrayBuffer vbMain = new VertexArrayBuffer();
     BufferBuilder2f builderMain = new BufferBuilder2f();
 
-    // circle buffers
-    ShaderProgram shCircles = new ShaderProgram();
-    VertexArray vaCircles = new VertexArray();
-    VertexArrayBuffer vbCircles = new VertexArrayBuffer();
-    BufferBuilder2f builderCircles = new BufferBuilder2f();
-
     // text
     TextObject to1;
     TextObject to2;
     TextRenderer textRenderer = new TextRenderer();
 
-//    Vector2f mousePos = new Vector2f();
-//    Vector2f mousePosOnClick = new Vector2f();
-
-//    Vector2f viewPos = new Vector2f();
-//    float viewScale = 1f;
-//    float scaleAddition = .1f;
-//    boolean forceUpdateView = false;
+    float scaleAddition = .1f;
 
     boolean[] heldMouseKeys = new boolean[8];
     boolean[] heldKeys = new boolean[350];
@@ -84,7 +124,10 @@ public class Example2d extends GameBase {
         winOps.initWindowSize = new Dimension((int) SCREEN_SIZE.x, (int) SCREEN_SIZE.y);
         window.quickSetupAndShow(winOps);
 
+        uiCamera.uniformBlockName = "UICameraView";
+        camera.uniformBlockName = "CameraView";
         camera.setupUniformBuffer();
+        uiCamera.setupUniformBuffer();
         FontManager.init();
         FontManager.loadFont(Font.MONOSPACED, Font.BOLD, 14, true);
         FontManager.generateAndBindAllFonts();
@@ -116,14 +159,16 @@ public class Example2d extends GameBase {
 
                 switch (key) {
                     case GLFW_KEY_ESCAPE -> this.window.setToClose();
-//                    case GLFW_KEY_E -> addToViewScale(-scaleAddition, false);
-//                    case GLFW_KEY_Q -> addToViewScale(scaleAddition, false);
-//                    case GLFW_KEY_R -> {
-//                        if (heldMouseKeys[GLFW_MOUSE_BUTTON_1]) break;
-//                        viewPos.set(0);
-//                        viewScale = 1;
-//                        forceUpdateView = true;
-//                    }
+                    case GLFW_KEY_O -> addToCaptureScale(scaleAddition);
+                    case GLFW_KEY_P -> addToCaptureScale(-scaleAddition);
+                    case GLFW_KEY_R -> {
+                        if (heldMouseKeys[GLFW_MOUSE_BUTTON_1]) break;
+                        camera.pos = new Vector3f(0);
+                        camera.captureSize = CAPTURE_SIZE;
+                        camera.up = new Vector3f(camera.worldUp);
+                        camera.hasChangedProjection = true;
+                        camera.hasChangedView = true;
+                    }
 
                     case GLFW_KEY_TAB -> toggleDebug();
                 }
@@ -137,23 +182,11 @@ public class Example2d extends GameBase {
         glfwSetMouseButtonCallback(window.handle, (window, button, action, mode) -> {
             if (action == GLFW_PRESS) {
                 heldMouseKeys[button] = true;
-
-//                if (button == GLFW_MOUSE_BUTTON_1) {
-//                    mousePosOnClick.set(mousePos.add(viewPos, new Vector2f()));
-//                }
             }
 
             if (action == GLFW_RELEASE) {
                 heldMouseKeys[button] = false;
             }
-        });
-
-        glfwSetScrollCallback(window.handle, (window, xOffset, yOffset) -> {
-//            if (yOffset != 0.0) addToViewScale((float) (scaleAddition * Math.clamp(-yOffset, -1, 1)), true);
-        });
-
-        glfwSetCursorPosCallback(window.handle, (window, xPos, yPos) -> {
-//            mousePos.set((float) xPos, (float) yPos)
         });
     }
 
@@ -162,13 +195,13 @@ public class Example2d extends GameBase {
         vbMain.genId(); vaMain.genId();
 
         builderMain.setAdditionalVertFloats(4);
-        builderMain.pushSeparatedPolygon(Shape2d.createRect(new Vector2f(50, 50), new Vector2f(500, 100), new ShapeMode.Demonstration(1, new Vector2f(), new Vector2f(1))));
-        builderMain.pushSeparatedPolygon(Shape2d.createRect(new Vector2f(200, 200), new Vector2f(700, 150), new ShapeMode.Demonstration(2, new Vector2f(), new Vector2f(1))));
-        builderMain.pushSeparatedPolygon(Shape2d.createLine(new Vector2f(70, 20), new Vector2f(150, 150), 20, new ShapeMode.Demonstration(3)));
-        builderMain.pushSeparatedPolygon(Shape2d.createRectOutline(new Vector2f(700, 100), new Vector2f(100, 50), 15, new ShapeMode.Demonstration(3)));
+        builderMain.pushSeparatedPolygon(Shape2d.createRect(new Vector2f(-1), new Vector2f(2), new Demonstration(0, new Vector2f(), new Vector2f(1))));
+        builderMain.pushSeparatedPolygon(Shape2d.createRect(new Vector2f(2, -.5f), new Vector2f(1.5f), new Demonstration(1, new Vector2f(), new Vector2f(1))));
+        builderMain.pushSeparatedPolygon(Shape2d.createLine(new Vector2f(-2, 0), new Vector2f(-3, -1), .2f, new Demonstration(3)));
+        builderMain.pushSeparatedPolygon(Shape2d.createRectOutline(new Vector2f(-3.5f, .5f), new Vector2f(1.5f, 1), .2f, new Demonstration(3)));
 
-        Shape2d.Poly2d p2 = new Shape2d.Poly2d(new ShapeMode.Demonstration(Color.RED), new Vector2f(-50, 50), new Vector2f(0, -50), new Vector2f(50, 50), new Vector2f(-50, 0), new Vector2f(50, 0));
-        p2.addPos(new Vector2f(100, 250));
+        Shape2d.Poly2d p2 = new Shape2d.Poly2d(new Demonstration(Color.RED), new Vector2f(-1, 1), new Vector2f(0, -1), new Vector2f(1), new Vector2f(-1, 0), new Vector2f(1, 0));
+        p2.addPos(new Vector2f(3.5f, -1));
         Shape2d.sortPoints(p2);
         builderMain.pushSeparatedPolygonSorted(p2);
 
@@ -180,40 +213,11 @@ public class Example2d extends GameBase {
         to2 = new TextObject(1, "", new Vector2f(0, 0), Color.WHITE, Color.BLACK);
         to1.setBgMargin(new Vector2f(5));
         to2.setBgMargin(new Vector2f(5));
-        textRenderer.setupDefaultShader(camera);
+        textRenderer.setupDefaultShader(uiCamera);
         textRenderer.pushTextObject(to1, to2);
         textRenderer.setModelTransform(new Matrix4f().identity().scale(1f/SCREEN_SIZE.x, 1f/SCREEN_SIZE.y, 1).translate(SCREEN_SIZE.x * CAPTURE_SIZE.x, SCREEN_SIZE.y * CAPTURE_SIZE.y, 0).scale(2*CAPTURE_SIZE.x, 2*CAPTURE_SIZE.y, 1));
-
-        // CIRCLE BUFFERS
-        vbCircles.genId(); vaCircles.genId();
-
-        builderCircles.setAdditionalVertFloats(5);
-        builderCircles.pushCircle(new Vector2f(200), 50, Color.BLUE);
-        builderCircles.pushCircle(new Vector2f(300), 34, 10, Color.GREEN);
-
-        VertexLayout instanceLayout = new VertexLayout();
-        instanceLayout.pushFloat(2);  // circle pos
-        instanceLayout.pushFloat(1);  // radius
-        instanceLayout.pushFloat(1);  // inner radius
-        instanceLayout.pushFloat(3);  // colour
-        vaCircles.bindBuffer(vbCircles);
-        vaCircles.pushLayout(instanceLayout, 1);
-        vbCircles.bufferData(builderCircles);
+        uiCamera.updateUniformBlock();  // ui never changes
     }
-
-//    /** Must be called after window is visible */
-//    public void setupShaders() {
-////        shMain.useDemoShader();
-////        shCircles.useCircleShader();
-//
-//        new Texture2d("textures/explosion.png").bindToTexArray(2, shMain);
-//        new Texture2d("textures/closed.png").bindToTexArray(3, shMain);
-//
-////        shMain.uniformResolutionData(SCREEN_SIZE, PROJECTION_MATRIX);
-////        shMain.uniform1f("viewScale", viewScale);
-////        shCircles.uniformResolutionData(SCREEN_SIZE, PROJECTION_MATRIX);
-////        shCircles.uniform1f("viewScale", viewScale);
-//    }
 
     public void updateFpsAndDebugText() {
         // updates every second
@@ -232,55 +236,24 @@ public class Example2d extends GameBase {
         to2.setString("""
                         Buffers:\
 
-                         - main [s:%s, v:%s, f:%s/%s (%.5f)]\
-
-                         - circles [s:%s, v:%s, f:%s/%s (%.5f)]""",
+                         - main [s:%s, v:%s, f:%s/%s (%.5f)]""",
                 builderMain.getSeparationsCount(),
                 builderMain.getVertexCount(),
                 builderMain.getFloatCount(),
                 builderMain.getBufferSize(),
-                builderMain.getCurrentFullnessPercent(),
-                builderCircles.getSeparationsCount(),
-                builderCircles.getVertexCount(),
-                builderCircles.getFloatCount(),
-                builderCircles.getBufferSize(),
-                builderCircles.getCurrentFullnessPercent()
+                builderMain.getCurrentFullnessPercent()
         );
     }
 
-//    public void addToViewScale(float addition, boolean relativeToMouse) {
-//        // mouse or middle of screen
-//        Vector2f relativeTo = relativeToMouse ? mousePos : new Vector2f(SCREEN_SIZE.width, SCREEN_SIZE.height).mul(.5f);
-//        viewPos.add(relativeTo.mul(viewScale, new Vector2f()).sub(relativeTo.mul(viewScale+addition, new Vector2f())));
-//
-//        viewScale += addition;
-//        forceUpdateView = true;
-//    }
-
-//    public void updateViewPos(double dt) {
-//        Vector2f addition = new Vector2f();
-//
-//        // mouse prioritised over keys
-//        if (heldMouseKeys[GLFW_MOUSE_BUTTON_1]) {
-//            addition = mousePos.sub(mousePosOnClick, new Vector2f()).negate();
-//            addition.sub(viewPos);
-//        }
-//
-//        if (forceUpdateView || !addition.equals(new Vector2f())) {
-//            viewPos.add(addition);
-//            shMain.uniform2f("viewPos", viewPos.x, viewPos.y);
-//            shMain.uniform1f("viewScale", viewScale);
-//
-//            shCircles.uniform2f("viewPos", viewPos.x, viewPos.y);
-//            shCircles.uniform1f("viewScale", viewScale);
-//            forceUpdateView = false;
-//        }
-//    }
+    public void addToCaptureScale(float addition) {
+        captureScale += addition;
+        camera.captureSize = CAPTURE_SIZE.mul(captureScale, new Vector2f());
+        camera.hasChangedProjection = true;
+    }
 
     public void toggleDebug() {
         debugMode = !debugMode;
         shMain.uniform1i("debugMode", debugMode ? 1:0);
-        shCircles.uniform1i("debugMode", debugMode ? 1:0);
     }
 
     public void update(double dt) {
@@ -295,10 +268,7 @@ public class Example2d extends GameBase {
         // shape examples & textures
         shMain.bind();
         shMain.uniform1f("time", (float) glfwGetTime());
-        vaMain.drawArrays(debugMode ? GL_LINE_STRIP : GL_TRIANGLE_STRIP, builderCircles.getVertexCount());
-
-//        shCircles.bind();
-//        vaCircles.drawInstanced(GL_TRIANGLES, 3, builderCircles.getVertexCount());
+        vaMain.drawArrays(debugMode ? GL_LINE_STRIP : GL_TRIANGLE_STRIP, builderMain.getVertexCount());
 
         textRenderer.draw();
 
@@ -310,7 +280,6 @@ public class Example2d extends GameBase {
         frameCounter++;
 
         glfwPollEvents();
-//        updateViewPos(dt);
         update(dt);
         updateFpsAndDebugText();
         render();

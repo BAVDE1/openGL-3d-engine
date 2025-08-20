@@ -5,7 +5,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -13,8 +12,8 @@ import static org.lwjgl.glfw.GLFW.*;
 
 public class CameraOrtho extends Camera {
     // view
-    protected Vector3f up = new Vector3f(worldUp);
-    protected Vector3f forward = new Vector3f(0, 0, 1);
+    public Vector3f up = new Vector3f(worldUp);
+    public Vector3f forward = new Vector3f(0, 0, 1);
 
     // controls
     public float moveSpeed = 3;
@@ -87,13 +86,5 @@ public class CameraOrtho extends Camera {
 
     public Matrix4f generateProjectionMatrix() {
         return new Matrix4f().identity().ortho(-captureSize.x, captureSize.x, -captureSize.y, captureSize.y, near, far);
-    }
-
-    public Vector3f getForward() {
-        return new Vector3f(forward);
-    }
-
-    public Vector3f getUp() {
-        return new Vector3f(up);
     }
 }

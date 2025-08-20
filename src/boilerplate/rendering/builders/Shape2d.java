@@ -58,7 +58,7 @@ public class Shape2d {
         return p;
     }
 
-    public static Poly2d createLine(Vector2f point1, Vector2f point2, int thickness) {
+    public static Poly2d createLine(Vector2f point1, Vector2f point2, float thickness) {
         Vector2f perp = new Vector2f();
         point2.sub(point1, perp).normalize();
         perp.perpendicular().mul(thickness * .5f);
@@ -67,13 +67,13 @@ public class Shape2d {
             point2.add(perp, new Vector2f()), point2.sub(perp, new Vector2f())
         );
     }
-    public static Poly2d createLine(Vector2f point1, Vector2f point2, int thickness, ShapeMode mode) {
+    public static Poly2d createLine(Vector2f point1, Vector2f point2, float thickness, ShapeMode mode) {
         Poly2d p = createLine(point1, point2, thickness);
         p.mode = mode;
         return p;
     }
 
-    public static Poly2d createRectOutline(Vector2f topLeft, Vector2f size, int thickness) {
+    public static Poly2d createRectOutline(Vector2f topLeft, Vector2f size, float thickness) {
         Vector2f pos = topLeft.add(size.div(2, new Vector2f()), new Vector2f());
 
         topLeft = topLeft.sub(pos, new Vector2f());
@@ -90,7 +90,7 @@ public class Shape2d {
         ).addPos(pos);
     }
 
-    public static Poly2d createRectOutline(Vector2f topLeft, Vector2f size, int thickness, ShapeMode mode) {
+    public static Poly2d createRectOutline(Vector2f topLeft, Vector2f size, float thickness, ShapeMode mode) {
         Poly2d p = createRectOutline(topLeft, size, thickness);
         p.mode = mode;
         return p;

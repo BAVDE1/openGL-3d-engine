@@ -1,9 +1,9 @@
 package boilerplate.rendering.textures;
 
 import boilerplate.utility.Logging;
+import org.lwjgl.opengl.GL45;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.opengl.GL45;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;

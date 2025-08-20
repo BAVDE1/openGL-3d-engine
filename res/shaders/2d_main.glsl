@@ -21,7 +21,7 @@ out float v_mode;
 out vec3 v_modeVars;
 
 void main() {
-    gl_Position = projection * view * vec4(position.xy / 900, 1, 1);
+    gl_Position = projection * view * vec4(position.xy, 10, 1);
 
     v_mode = mode;
     v_modeVars = modeVars;
@@ -30,7 +30,7 @@ void main() {
 //--- FRAG
 #version 450 core
 
-uniform vec2 resolution;
+//uniform vec2 resolution;
 uniform highp float time;
 uniform int debugMode;
 uniform sampler2D textures[16];
@@ -42,10 +42,10 @@ in vec3 v_modeVars;
 
 out vec4 colour;
 
-vec2 invResolution = 1 / resolution;
+//vec2 invResolution = 1 / resolution;
 
 void doColourfull() {
-    vec2 uv = gl_FragCoord.xy * invResolution;
+    vec2 uv = gl_FragCoord.xy / 500;
     colour = vec4(uv.xy, abs(sin(time - length(uv))), 1);
 }
 
