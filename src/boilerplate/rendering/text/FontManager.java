@@ -7,6 +7,7 @@ import org.joml.Vector2f;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -82,13 +83,7 @@ public class FontManager {
 
             Logging.debug("Attempting to load font from resource path: %s", resourcePath);
             try {
-                InputStream customFontStream = ClassLoader.getSystemResourceAsStream(resourcePath);
-                if (customFontStream == null) {
-                    Logging.danger("Error, could not load custom font resource: %s", resourcePath);
-                    return;
-                }
-
-                font = Font.createFont(Font.TRUETYPE_FONT, customFontStream);
+                font = Font.createFont(Font.TRUETYPE_FONT, new File(resourcePath));
                 font = font.deriveFont(fontStyle, fontSize);
             } catch (IOException | FontFormatException e) {
                 Logging.danger("Failed to load the font resource '%s'\nError message: %s", resourcePath, e);
@@ -100,12 +95,12 @@ public class FontManager {
 
         private String getCustomFontResourcePath(int fontEnum) {
             return switch (fontEnum) {
-                case FONT_NOVA -> "fonts/Bona_Nova_SC/BonaNovaSC-Regular.ttf";
-                case FONT_JACQUARD -> "fonts/Jacquard_24/Jacquard24-Regular.ttf";
-                case FONT_TINY -> "fonts/Tiny5/Tiny5-Regular.ttf";
-                case FONT_CASTORO -> "fonts/Castoro_Titling/CastoroTitling-Regular.ttf";
-                case FONT_LUGRASIMO -> "fonts/Lugrasimo/Lugrasimo-Regular.ttf";
-                case FONT_KINGS -> "fonts/Kings/Kings-Regular.ttf";
+                case FONT_NOVA -> "res/fonts/Bona_Nova_SC/BonaNovaSC-Regular.ttf";
+                case FONT_JACQUARD -> "res/fonts/Jacquard_24/Jacquard24-Regular.ttf";
+                case FONT_TINY -> "res/fonts/Tiny5/Tiny5-Regular.ttf";
+                case FONT_CASTORO -> "res/fonts/Castoro_Titling/CastoroTitling-Regular.ttf";
+                case FONT_LUGRASIMO -> "res/fonts/Lugrasimo/Lugrasimo-Regular.ttf";
+                case FONT_KINGS -> "res/fonts/Kings/Kings-Regular.ttf";
                 default -> null;
             };
         }

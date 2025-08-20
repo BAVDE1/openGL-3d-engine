@@ -69,13 +69,14 @@ public class ShaderProgram {
     public void attachShaderMulti(String path) {
         int currentShaderType = -1;
 
-        InputStream shaderFileStream = ClassLoader.getSystemResourceAsStream(path);
-        if (shaderFileStream == null || path.isEmpty()) {
+        Scanner scanner;
+        try {
+            scanner = new Scanner(new File(path));
+        } catch (FileNotFoundException e) {
             Logging.danger("'%s' could not be read. Aborting", path);
             return;
         }
 
-        Scanner scanner = new Scanner(shaderFileStream);
         StringBuilder charSequence = new StringBuilder();
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
@@ -108,15 +109,15 @@ public class ShaderProgram {
         int shaderType = getShaderType(path);
         if (shaderType < 0) return;  // not a shader file
 
-        // get file contents
-        InputStream is = ClassLoader.getSystemResourceAsStream(path);
-        if (is == null || path.isEmpty()) {
+        Scanner scanner;
+        try {
+            scanner = new Scanner(new File(path));
+        } catch (FileNotFoundException e) {
             Logging.danger("'%s' could not be read. Aborting", path);
             return;
         }
 
         String charSequence;
-        Scanner scanner = new Scanner(is);
         StringBuilder fileContents = new StringBuilder();
         while (scanner.hasNextLine()) {
             fileContents.append("\n").append(scanner.nextLine());

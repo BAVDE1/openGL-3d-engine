@@ -133,7 +133,7 @@ public class Example2d extends GameBase {
         FontManager.generateAndBindAllFonts();
 
         shMain = new ShaderProgram();
-        shMain.autoInitializeShadersMulti("shaders/2d_main.glsl");
+        shMain.autoInitializeShadersMulti("res/shaders/2d_main.glsl");
         new Texture2d("res/textures/explosion.png").bindToTexArray(2, shMain);
         new Texture2d("res/textures/closed.png").bindToTexArray(3, shMain);
 

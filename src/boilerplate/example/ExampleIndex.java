@@ -54,7 +54,7 @@ public class ExampleIndex extends GameBase {
         FontManager.loadFont(Font.MONOSPACED, Font.BOLD, 20, true);
         FontManager.generateAndBindAllFonts();
 
-        modelShader.autoInitializeShadersMulti("shaders/2d_shapes.glsl");
+        modelShader.autoInitializeShadersMulti("res/shaders/2d_shapes.glsl");
         camera.bindShaderToUniformBlock(modelShader);
 
         ParShapesMesh cube = ParShapes.par_shapes_create_cube();

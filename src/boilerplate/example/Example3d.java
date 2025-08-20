@@ -187,10 +187,10 @@ public class Example3d extends GameBase {
         ballerCube.useClampEdgeWrap();
         CubeMap.unbind(0);
 
-        shCubeMap.autoInitializeShadersMulti("shaders/3d_cube_map.glsl");
-        shReflect.autoInitializeShadersMulti("shaders/3d_reflect.glsl");
-        shOutline.autoInitializeShadersMulti("shaders/3d_outline.glsl");
-        shLightSource.autoInitializeShadersMulti("shaders/3d_light_source.glsl");
+        shCubeMap.autoInitializeShadersMulti("res/shaders/3d_cube_map.glsl");
+        shReflect.autoInitializeShadersMulti("res/shaders/3d_reflect.glsl");
+        shOutline.autoInitializeShadersMulti("res/shaders/3d_outline.glsl");
+        shLightSource.autoInitializeShadersMulti("res/shaders/3d_light_source.glsl");
 
         camera.setupUniformBuffer(shCubeMap, shReflect, shOutline, shLightSource);
         skyBox.setupBuffers(camera, "res/textures/space_skybox", "png");
@@ -203,7 +203,7 @@ public class Example3d extends GameBase {
         cubeModel.loadShape(cube);
 
         VertexArrayBuffer vbPost = new VertexArrayBuffer();
-        shPost.autoInitializeShadersMulti("shaders/3d_post_processing.glsl");
+        shPost.autoInitializeShadersMulti("res/shaders/3d_post_processing.glsl");
         shPost.uniform1i("bloomOnly", 0);
         vaPost.genId();
         vbPost.genId();
@@ -231,12 +231,12 @@ public class Example3d extends GameBase {
             fb.checkCompletionOrError();
         }
         FrameBuffer.unbind();
-        gaussianBlurSh.autoInitializeShadersMulti("shaders/3d_gaussian_blur.glsl");
+        gaussianBlurSh.autoInitializeShadersMulti("res/shaders/3d_gaussian_blur.glsl");
 
         Matrix4f skyLightProjection = new Matrix4f().ortho(-8, 8, -8, 8, camera.near, camera.far);
         Matrix4f skyLightView = new Matrix4f().lookAt(skyLight.direction.negate(new Vector3f()).mul(3), new Vector3f(), new Vector3f(0, 1, 0));
         lightSpaceMatrix = skyLightProjection.mul(skyLightView);
-        shadowMapShader.autoInitializeShadersMulti("shaders/3d_shadow_map.glsl");
+        shadowMapShader.autoInitializeShadersMulti("res/shaders/3d_shadow_map.glsl");
         shadowMapShader.uniformMatrix4f("lightSpaceMatrix", lightSpaceMatrix);
         shadowMap.genId();
         Texture depthMap = FrameBuffer.setupDefaultDepthBuffer(SHADOW_MAP_SIZE);
@@ -249,7 +249,7 @@ public class Example3d extends GameBase {
         FrameBuffer.unbind();
 
         VertexArrayBuffer vbShadowMap = new VertexArrayBuffer();
-        displayShadowMapShader.autoInitializeShadersMulti("shaders/3d_shadow_display_map.glsl");
+        displayShadowMapShader.autoInitializeShadersMulti("res/shaders/3d_shadow_display_map.glsl");
         displayShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.75f, .75f, 0).scale(.25f));
         vaDisplayShadowMap.genId();
         vbShadowMap.genId();
@@ -258,7 +258,7 @@ public class Example3d extends GameBase {
         rectData.pushPolygon(Shape2d.createRect(new Vector2f(0), new Vector2f(1)));
         vbShadowMap.bufferData(rectData);
 
-        modelShader.autoInitializeShadersMulti("shaders/3d_model.glsl");
+        modelShader.autoInitializeShadersMulti("res/shaders/3d_model.glsl");
         modelShader.uniformMatrix4f("lightSpaceMatrix", lightSpaceMatrix);
         modelShader.uniform1f("flashLightStrength", 0);
         modelShader.uniform1f("farPlane", camera.far);
@@ -297,7 +297,7 @@ public class Example3d extends GameBase {
 
         spotLight.setColourValues(new Vector3f(1), new Vector3f(.6f), new Vector3f());
 
-        displayPointShadowMapShader.autoInitializeShadersMulti("shaders/3d_point_shadow_display_map.glsl");
+        displayPointShadowMapShader.autoInitializeShadersMulti("res/shaders/3d_point_shadow_display_map.glsl");
         camera.bindShaderToUniformBlock(displayPointShadowMapShader);
         VertexArrayBuffer vbPointShadowMap = new VertexArrayBuffer();
         vaDisplayPointShadowMap.genId();
@@ -307,7 +307,7 @@ public class Example3d extends GameBase {
         rectData.pushPolygon(Shape2d.createRect(new Vector2f(-1), new Vector2f(2)));
         vbPointShadowMap.bufferData(rectData);
 
-        pointShadowMapShader.autoInitializeShadersMulti("shaders/3d_point_shadow_map.glsl");
+        pointShadowMapShader.autoInitializeShadersMulti("res/shaders/3d_point_shadow_map.glsl");
         pointShadowMapShader.uniform1f("farPlane", camera.far);
         for (int i = 0; i < 2; i++) {
             CubeMap texture = pointShadowTextures.get(i);
@@ -329,7 +329,7 @@ public class Example3d extends GameBase {
 
         parallaxPlane.loadShape(ParShapes.par_shapes_create_plane(1, 1));
         parallaxPlane.modelTransform = new Matrix4f().translate(-1, 3, 1).rotateX((float) Math.PI * -.5f).scale(2);
-        shParallax.autoInitializeShadersMulti("shaders/3d_parallax.glsl");
+        shParallax.autoInitializeShadersMulti("res/shaders/3d_parallax.glsl");
         skyLight.uniformValues("skyLight", shParallax);
         pDiffuse = new Texture2d("res/textures/stone-wall/albedo.png");
         pNormal = new Texture2d("res/textures/stone-wall/normal.png");
@@ -339,7 +339,7 @@ public class Example3d extends GameBase {
         pHeight.useLinearInterpolation();
         camera.bindShaderToUniformBlock(shParallax);
 
-        shShapes.autoInitializeShadersMulti("shaders/3d_shapes.glsl");
+        shShapes.autoInitializeShadersMulti("res/shaders/3d_shapes.glsl");
         camera.bindShaderToUniformBlock(shShapes);
         ParShapesMesh ico = ParShapes.par_shapes_create_icosahedron();
         ParShapes.par_shapes_unweld(ico, true);
