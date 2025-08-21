@@ -333,6 +333,7 @@ public class TextObject {
 
             @Override
             public void pushVertex(TextObject textObject, Vector2f pos, Vector2f texCoords, Color colour, int zAddition) {
+                System.out.println(pos);
                 for (VertexLayout.Element element : textObject.parent.vertexLayout.elements) {
                     switch (element.hint) {
                         case (VertexLayout.HINT_POSITION) ->
