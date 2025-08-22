@@ -44,76 +44,80 @@ import static org.lwjgl.opengl.GL43.glDebugMessageCallback;
 
 public class Example3d extends GameBase {
     public boilerplate.common.Window window = new Window();
-    final Vector2f SCREEN_SIZE = new Vector2f(500, 300);
-//    public final static Dimension SHADOW_MAP_SIZE = new Dimension(SCREEN_SIZE);
+    final Vector2f SCREEN_SIZE = new Vector2f(800);
+    final Dimension SCREEN_SIZE_DIM = new Dimension((int) SCREEN_SIZE.x, (int) SCREEN_SIZE.y);
+    final Dimension SHADOW_MAP_SIZE = new Dimension(SCREEN_SIZE_DIM);
+    final Vector2f CAPTURE_UI_SIZE = new Vector2f(SCREEN_SIZE.x / 200, SCREEN_SIZE.y / 200);
+
+    CameraPerspective camera = new CameraPerspective(new Vector2f(1), CameraPerspective.MODE_TARGET, new Vector3f(0, 0, 5), 5);
+    CameraOrtho uiCamera = new CameraOrtho(CAPTURE_UI_SIZE);
+    TextRenderer textHint = new TextRenderer();
+    TextRenderer textMenu = new TextRenderer();
 
     boolean renderWireFrame = false;
+    boolean hotkeyMenu = false;
+    boolean flashlightOn = false;
+    boolean bloomOn = false;
 
-//    CameraPerspective camera = new CameraPerspective(new Vector2f(1), CameraPerspective.MODE_TARGET, new Vector3f(0, 0, 5), 5);
-    CameraOrtho uiCamera = new CameraOrtho(new Vector2f(SCREEN_SIZE.x / 150f, SCREEN_SIZE.y / 150f));
+    ShaderProgram shPost = new ShaderProgram();
+    ShaderProgram shCubeMap = new ShaderProgram();
+    ShaderProgram shReflect = new ShaderProgram();
+    ShaderProgram shOutline = new ShaderProgram();
+    ShaderProgram shLightSource = new ShaderProgram();
+    VertexArray vaPost = new VertexArray();
+    Model cubeModel = new Model(Model.defaultShapeVertexLayout());
+    CubeMap ballerCube = new CubeMap();
+    SkyBox skyBox = new SkyBox();
 
-    TextRenderer textHint = new TextRenderer();
-//    TextRenderer textMenu = new TextRenderer();
+    PointLight lightRed = new PointLight(new Vector3f(0, 1, 0));
+    PointLight lightBlue = new PointLight(new Vector3f(0, 2, 0));
+    Light.LightGroup lightGroup = new Light.LightGroup();
+    DirectionalLight skyLight = new DirectionalLight(new Vector3f(0, -1, 1));
+    SpotLight spotLight = new SpotLight(camera.getPos(), camera.getForward(), 10, 12);
 
-//    ShaderProgram shPost = new ShaderProgram();
-//    ShaderProgram shCubeMap = new ShaderProgram();
-//    ShaderProgram shReflect = new ShaderProgram();
-//    ShaderProgram shOutline = new ShaderProgram();
-//    ShaderProgram shLightSource = new ShaderProgram();
-//    VertexArray vaPost = new VertexArray();
-//    Model cubeModel = new Model(Model.defaultShapeVertexLayout());
-//    CubeMap ballerCube = new CubeMap();
-//    SkyBox skyBox = new SkyBox();
-//
-//    PointLight lightRed = new PointLight(new Vector3f(0, 1, 0));
-//    PointLight lightBlue = new PointLight(new Vector3f(0, 2, 0));
-//    Light.LightGroup lightGroup = new Light.LightGroup();
-//    DirectionalLight skyLight = new DirectionalLight(new Vector3f(0, -1, 1));
-////    SpotLight spotLight = new SpotLight(camera.getPos(), camera.getForward(), 10, 12);
-//
-////    FrameBuffer fb = new FrameBuffer(SCREEN_SIZE);
-////    FrameBuffer[] pingPongFbs = new FrameBuffer[]{new FrameBuffer(SCREEN_SIZE), new FrameBuffer(SCREEN_SIZE)};
-//    ShaderProgram gaussianBlurSh = new ShaderProgram();
-//
-//    ShaderProgram modelShader = new ShaderProgram();
-//    Model model = new Model();
-//    Model model2 = new Model();
-//    Model model3 = new Model();
-//    Model model4 = new Model();
-//    Model modelFloor = new Model();
-//    Model modelTiles = new Model();
-//    Matrix4f modelFloorTrans1 = new Matrix4f().translate(-6, 1, 1).scale(4, 5, 10);
-//    Matrix4f modelFloorTrans2 = new Matrix4f().translate(6, 1, 1).scale(4, 5, 10);
-//
-//    Matrix4f lightSpaceMatrix;
-//    VertexArray vaDisplayShadowMap = new VertexArray();
-//    ShaderProgram displayShadowMapShader = new ShaderProgram();
-//    ShaderProgram shadowMapShader = new ShaderProgram();
-////    FrameBuffer shadowMap = new FrameBuffer(SCREEN_SIZE);
-//
-//    Matrix4f pointShadowProjection;
-//    VertexArray vaDisplayPointShadowMap = new VertexArray();
-//    ShaderProgram displayPointShadowMapShader = new ShaderProgram();
-//    ShaderProgram pointShadowMapShader = new ShaderProgram();
-//    List<CubeMap> pointShadowTextures = Arrays.asList(new CubeMap(), new CubeMap());
-//    List<FrameBuffer> pointShadowMaps = Arrays.asList(new FrameBuffer(false), new FrameBuffer(false));
-//
-//    Model parallaxPlane = new Model(new VertexLayout(
-//            new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_POSITION),
-//            new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 2, VertexLayout.HINT_TEX_POS)
-//    ));
-//    ShaderProgram shParallax = new ShaderProgram();
-//    Texture2d pDiffuse;
-//    Texture2d pNormal;
-//    Texture2d pHeight;
-//
-//    ShaderProgram shShapes = new ShaderProgram();
-//    Model[] shapes = new Model[] {
-//            new Model(Model.defaultShapeVertexLayout()),
-//            new Model(Model.defaultShapeVertexLayout()),
-//            new Model(Model.defaultShapeVertexLayout()),
-//            new Model(Model.defaultShapeVertexLayout())
-//    };
+    FrameBuffer fb = new FrameBuffer(SCREEN_SIZE_DIM);
+    FrameBuffer[] pingPongFbs = new FrameBuffer[]{new FrameBuffer(SCREEN_SIZE_DIM), new FrameBuffer(SCREEN_SIZE_DIM)};
+    ShaderProgram gaussianBlurSh = new ShaderProgram();
+
+    ShaderProgram modelShader = new ShaderProgram();
+    Model model = new Model();
+    Model model2 = new Model();
+    Model model3 = new Model();
+    Model model4 = new Model();
+    Model modelFloor = new Model();
+    Model modelTiles = new Model();
+    Matrix4f modelFloorTrans1 = new Matrix4f().translate(-6, 1, 1).scale(4, 5, 10);
+    Matrix4f modelFloorTrans2 = new Matrix4f().translate(6, 1, 1).scale(4, 5, 10);
+
+    Matrix4f lightSpaceMatrix;
+    VertexArray vaDisplayShadowMap = new VertexArray();
+    ShaderProgram displayShadowMapShader = new ShaderProgram();
+    ShaderProgram shadowMapShader = new ShaderProgram();
+    FrameBuffer shadowMap = new FrameBuffer(SCREEN_SIZE_DIM);
+
+    Matrix4f pointShadowProjection;
+    VertexArray vaDisplayPointShadowMap = new VertexArray();
+    ShaderProgram displayPointShadowMapShader = new ShaderProgram();
+    ShaderProgram pointShadowMapShader = new ShaderProgram();
+    List<CubeMap> pointShadowTextures = Arrays.asList(new CubeMap(), new CubeMap());
+    List<FrameBuffer> pointShadowMaps = Arrays.asList(new FrameBuffer(false), new FrameBuffer(false));
+
+    Model parallaxPlane = new Model(new VertexLayout(
+            new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 3, VertexLayout.HINT_POSITION),
+            new VertexLayout.Element(VertexLayout.TYPE_FLOAT, 2, VertexLayout.HINT_TEX_POS)
+    ));
+    ShaderProgram shParallax = new ShaderProgram();
+    Texture2d pDiffuse;
+    Texture2d pNormal;
+    Texture2d pHeight;
+
+    ShaderProgram shShapes = new ShaderProgram();
+    Model[] shapes = new Model[]{
+            new Model(Model.defaultShapeVertexLayout()),
+            new Model(Model.defaultShapeVertexLayout()),
+            new Model(Model.defaultShapeVertexLayout()),
+            new Model(Model.defaultShapeVertexLayout())
+    };
 
     @Override
     public void start() {
@@ -127,18 +131,19 @@ public class Example3d extends GameBase {
         winOps.initWindowSize = new Dimension((int) SCREEN_SIZE.x, (int) SCREEN_SIZE.y);
         window.quickSetupAndShow(winOps);
 
-//        uiCamera.uniformBlockName = "UICameraView";
+        uiCamera.uniformBlockName = "UICameraView";
         uiCamera.setupUniformBuffer();
-//        camera.setupUniformBuffer();
+        camera.setupUniformBuffer();
         FontManager.init();
-        FontManager.loadFont(Font.MONOSPACED, Font.BOLD, 20, true);
+        FontManager.loadFont(Font.MONOSPACED, Font.BOLD, 18, true);
+        FontManager.loadFont(Font.MONOSPACED, Font.BOLD, 15, true);
         FontManager.generateAndBindAllFonts();
 
-//        Renderer.enableDepthTest();
-//        Renderer.enableStencilTest();
-//        Renderer.setStencilOperation(GL_KEEP, GL_KEEP, GL_REPLACE);
-//        Renderer.useDefaultFaceCulling();
-//        Renderer.setViewportSize(SCREEN_SIZE.x, SCREEN_SIZE.y);
+        Renderer.enableDepthTest();
+        Renderer.enableStencilTest();
+        Renderer.setStencilOperation(GL_KEEP, GL_KEEP, GL_REPLACE);
+        Renderer.useDefaultFaceCulling();
+        Renderer.setViewportSize((int) SCREEN_SIZE.x, (int) SCREEN_SIZE.y);
 
         bindEvents();
         setupBuffers();
@@ -148,453 +153,489 @@ public class Example3d extends GameBase {
         glDebugMessageCallback(Logging.debugCallback(), -1);
 
         glfwSetKeyCallback(window.handle, (window, key, scancode, action, mods) -> {
-//            if (action == GLFW_PRESS) {
-//                if (key == GLFW_KEY_ESCAPE) this.window.setToClose();
-//                if (key == GLFW_KEY_TAB) {
-//                    renderWireFrame = !renderWireFrame;
-//                    model.renderWireFrame(renderWireFrame);
-//                    model2.renderWireFrame(renderWireFrame);
-//                    model4.renderWireFrame(renderWireFrame);
-//                }
-//                if (key == GLFW_KEY_GRAVE_ACCENT) {
-//                    model.renderBones(!model.renderBones);
-//                    model2.renderBones(!model2.renderBones);
-//                }
-////                if (key == GLFW_KEY_F)
-////                    camera.setMode(camera.getMode() == CameraPerspective.MODE_FLY ? CameraPerspective.MODE_TARGET : CameraPerspective.MODE_FLY);
-//                if (key == GLFW_KEY_1) model.animator.playAnimation("R6Armature|WalkAnim");
-//                if (key == GLFW_KEY_2) model.animator.playAnimation("R6Armature|Climb");
-//                if (key == GLFW_KEY_3) model.animator.playAnimation("R6Armature|Idle2");
-//                if (key == GLFW_KEY_4) model.animator.playAnimation("R6Armature|Sit");
-//                if (key == GLFW_KEY_5) model.animator.playAnimation("R6Armature|Jump");
-//                if (key == GLFW_KEY_6) model.animator.playAnimation("R6Armature|Fall");
-//                if (key == GLFW_KEY_7) model2.animator.playAnimation("anim_0");
-//                if (key == GLFW_KEY_PERIOD) model.animator.animationSpeed += .1f;
-//                if (key == GLFW_KEY_COMMA) model.animator.animationSpeed -= .1f;
-//                if (key == GLFW_KEY_L) {
-//                    model.animator.stopPlayingAnimation(true);
-//                    model2.animator.stopPlayingAnimation(true);
-//                }
-//                if (key == GLFW_KEY_G) modelShader.uniform1f("flashLightStrength", 1);
-//                if (key == GLFW_KEY_H) modelShader.uniform1f("flashLightStrength", 0);
-//                if (key == GLFW_KEY_O) shPost.uniform1i("bloomOnly", 0);
-//                if (key == GLFW_KEY_P) shPost.uniform1i("bloomOnly", 1);
-//            }
+            if (action == GLFW_PRESS) {
+                if (key == GLFW_KEY_ESCAPE) this.window.setToClose();
+                if (key == GLFW_KEY_TAB) hotkeyMenu = !hotkeyMenu;
+                if (key == GLFW_KEY_GRAVE_ACCENT) {
+                    model.renderBones(!model.renderBones);
+                    model2.renderBones(!model2.renderBones);
+                }
+                if (key == GLFW_KEY_F)
+                    camera.setMode(camera.getMode() == CameraPerspective.MODE_FLY ? CameraPerspective.MODE_TARGET : CameraPerspective.MODE_FLY);
+                if (key == GLFW_KEY_1) model.animator.playAnimation("R6Armature|WalkAnim");
+                if (key == GLFW_KEY_2) model.animator.playAnimation("R6Armature|Climb");
+                if (key == GLFW_KEY_3) model.animator.playAnimation("R6Armature|Idle2");
+                if (key == GLFW_KEY_4) model.animator.playAnimation("R6Armature|Sit");
+                if (key == GLFW_KEY_5) model.animator.playAnimation("R6Armature|Jump");
+                if (key == GLFW_KEY_6) model.animator.playAnimation("R6Armature|Fall");
+                if (key == GLFW_KEY_7) model2.animator.playAnimation("anim_0");
+                if (key == GLFW_KEY_PERIOD) model.animator.animationSpeed += .1f;
+                if (key == GLFW_KEY_COMMA) model.animator.animationSpeed -= .1f;
+                if (key == GLFW_KEY_L) {
+                    model.animator.stopPlayingAnimation(true);
+                    model2.animator.stopPlayingAnimation(true);
+                }
+                if (key == GLFW_KEY_G) {
+                    flashlightOn = !flashlightOn;
+                    modelShader.uniform1f("flashLightStrength", flashlightOn ? 1 : 0);
+                }
+                if (key == GLFW_KEY_O) {
+                    bloomOn = !bloomOn;
+                    shPost.uniform1i("bloomOnly", bloomOn ? 1 : 0);
+                }
+                if (key == GLFW_KEY_M) {
+                    renderWireFrame = !renderWireFrame;
+                    model.renderWireFrame(renderWireFrame);
+                    model2.renderWireFrame(renderWireFrame);
+                    model4.renderWireFrame(renderWireFrame);
+                }
+            }
         });
 
         glfwSetMouseButtonCallback(window.handle, (window, button, action, mods) -> {
-//            camera.processMouseInputs(this.window);
+            camera.processMouseInputs(this.window);
         });
 
         glfwSetCursorPosCallback(window.handle, (window, xPos, yPos) -> {
-//            camera.processMouseMovement(this.window, (float) xPos, (float) yPos);
+            camera.processMouseMovement(this.window, (float) xPos, (float) yPos);
         });
 
         glfwSetScrollCallback(window.handle, (window, xDelta, yDelta) -> {
-//            camera.processMouseScroll(this.window, (float) xDelta, (float) yDelta);
+            camera.processMouseScroll(this.window, (float) xDelta, (float) yDelta);
         });
     }
 
     public void setupBuffers() {
-//        ballerCube.genId();
-//        ballerCube.loadFaces("res/textures/baller.png");
-//        ballerCube.useNearestInterpolation();
-//        ballerCube.useClampEdgeWrap();
-//        CubeMap.unbind(0);
-//
-//        shCubeMap.autoInitializeShadersMulti("res/shaders/3d_cube_map.glsl");
-//        shReflect.autoInitializeShadersMulti("res/shaders/3d_reflect.glsl");
-//        shOutline.autoInitializeShadersMulti("res/shaders/3d_outline.glsl");
-//        shLightSource.autoInitializeShadersMulti("res/shaders/3d_light_source.glsl");
-//
-//        camera.setupUniformBuffer(shCubeMap, shReflect, shOutline, shLightSource);
-//        skyBox.setupBuffers(camera, "res/textures/space_skybox", "png");
-//
-//        ParShapesMesh cube = ParShapes.par_shapes_create_cube();
-//        assert cube != null;
-//        ParShapes.par_shapes_translate(cube, -.5f, -.5f, -.5f);
-//        ParShapes.par_shapes_unweld(cube, true);
-//        ParShapes.par_shapes_compute_normals(cube);
-//        cubeModel.loadShape(cube);
-//
-//        VertexArrayBuffer vbPost = new VertexArrayBuffer();
-//        shPost.autoInitializeShadersMulti("res/shaders/3d_post_processing.glsl");
-//        shPost.uniform1i("bloomOnly", 0);
-//        vaPost.genId();
-//        vbPost.genId();
-//
-//        vaPost.fastSetup(new int[]{2}, vbPost);
-//        BufferBuilder2f rectData = new BufferBuilder2f(true);
-//        rectData.pushPolygon(Shape2d.createRect(new Vector2f(-1), new Vector2f(2)));
-//        vbPost.bufferData(rectData);
-//
-//        fb.genId();
-//        FrameBuffer.RenderBuffer rb = new FrameBuffer.RenderBuffer(true);
-//        rb.createBufferMultisample(SCREEN_SIZE, GL45.GL_DEPTH24_STENCIL8, GL45.GL_DEPTH_STENCIL_ATTACHMENT, 4);
-//        fb.attachColourBuffer2D(fb.setupDefaultColourMultisampleBuffer(4));
-//        fb.attachColourBuffer2D(fb.setupDefaultColourMultisampleBuffer(4));
-//        fb.attachRenderBuffer(rb);
-//        fb.drawToMultipleColourBuffers(0, 1);
-//        fb.intermediaryFB = fb.createIntermediaryFB();
-//        fb.intermediaryFB.attachColourBuffer2D(fb.intermediaryFB.setupDefaultColourBuffer(), fb.intermediaryFB.setupDefaultColourBuffer());
-//        fb.intermediaryFB.checkCompletionOrError();
-//        fb.checkCompletionOrError();
-//
-//        for (FrameBuffer fb : pingPongFbs) {
-//            fb.genId();
-//            fb.attachColourBuffer2D(fb.setupDefaultColourBuffer());
-//            fb.checkCompletionOrError();
-//        }
-//        FrameBuffer.unbind();
-//        gaussianBlurSh.autoInitializeShadersMulti("res/shaders/3d_gaussian_blur.glsl");
-//
-//        Matrix4f skyLightProjection = new Matrix4f().ortho(-8, 8, -8, 8, camera.near, camera.far);
-//        Matrix4f skyLightView = new Matrix4f().lookAt(skyLight.direction.negate(new Vector3f()).mul(3), new Vector3f(), new Vector3f(0, 1, 0));
-//        lightSpaceMatrix = skyLightProjection.mul(skyLightView);
-//        shadowMapShader.autoInitializeShadersMulti("res/shaders/3d_shadow_map.glsl");
-//        shadowMapShader.uniformMatrix4f("lightSpaceMatrix", lightSpaceMatrix);
-//        shadowMap.genId();
-//        Texture depthMap = FrameBuffer.setupDefaultDepthBuffer(SHADOW_MAP_SIZE);
-//        depthMap.useNearestInterpolation();
-//        depthMap.useRepeatWrap();
-//        shadowMap.attachDepthBuffer2D(depthMap);
-//        shadowMap.drawBufferNone();
-//        shadowMap.readBufferNone();
-//        shadowMap.checkCompletionOrError();
-//        FrameBuffer.unbind();
-//
-//        VertexArrayBuffer vbShadowMap = new VertexArrayBuffer();
-//        displayShadowMapShader.autoInitializeShadersMulti("res/shaders/3d_shadow_display_map.glsl");
-//        displayShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.75f, .75f, 0).scale(.25f));
-//        vaDisplayShadowMap.genId();
-//        vbShadowMap.genId();
-//        vaDisplayShadowMap.fastSetup(new int[]{2}, vbShadowMap);
-//        rectData.clear();
-//        rectData.pushPolygon(Shape2d.createRect(new Vector2f(0), new Vector2f(1)));
-//        vbShadowMap.bufferData(rectData);
-//
-//        modelShader.autoInitializeShadersMulti("res/shaders/3d_model.glsl");
-//        modelShader.uniformMatrix4f("lightSpaceMatrix", lightSpaceMatrix);
-//        modelShader.uniform1f("flashLightStrength", 0);
-//        modelShader.uniform1f("farPlane", camera.far);
-//        camera.bindShaderToUniformBlock(modelShader);
-//
-//        modelFloor.loadModel("res/models/crate/NEWCRATE.fbx", true);
-//        modelFloor.modelTransform.translate(0, -6, 1).scale(10, 10, 22);
-//
-//        modelTiles.loadModel("res/models/tiles/plane.fbx", true);
-//        modelTiles.modelTransform.translate(0, -0.99f, 0).scale(.01f);
-//        modelTiles.getMaterial(0).diffuseTexture.useLinearInterpolation();
-//        modelTiles.getMaterial(0).normalMap.useLinearInterpolation();
-//
-//        model.loadModel("res/models/roblox/scene.gltf", true);
-//        model.modelTransform.translate(-2, -1f, 1).rotateY(1);
-//        model.setupBoneRendering(camera);
-//
-//        model2.loadModel("res/models/guard/scene.md5mesh", true);
-//        model2.modelTransform.scale(.03f).translate(0, -33, -40);
-//        model2.setupBoneRendering(camera);
-//
-//        model3.loadModel("res/models/bloxycola/cola.obj", true);
-//        model3.modelTransform.translate(2, -.55f, 0).rotateY(2.1f);
-//
-//        model4.loadModel("res/models/miku/miku_prefab.fbx", true);
-//        model4.modelTransform.translate(-3, -1, 2.5f).rotateY(1.2f);
-//
-//        lightRed.setColourValues(new Vector3f(2, 0, 0), new Vector3f(5, 0, 0), new Vector3f());
-//        lightBlue.setColourValues(new Vector3f(0, 0, 2), new Vector3f(0, 0, .8f), new Vector3f());
-//        lightGroup.addLight(lightRed, lightBlue);
-//
-//        skyLight.diffuse = new Vector3f(.8f);
-//        skyLight.specular = new Vector3f(2);
-//        skyLight.ambient = new Vector3f(.3f);
-//        skyLight.uniformValues("skyLight", modelShader);  // never changes
-//
-//        spotLight.setColourValues(new Vector3f(1), new Vector3f(.6f), new Vector3f());
-//
-//        displayPointShadowMapShader.autoInitializeShadersMulti("res/shaders/3d_point_shadow_display_map.glsl");
-//        camera.bindShaderToUniformBlock(displayPointShadowMapShader);
-//        VertexArrayBuffer vbPointShadowMap = new VertexArrayBuffer();
-//        vaDisplayPointShadowMap.genId();
-//        vbPointShadowMap.genId();
-//        vaDisplayPointShadowMap.fastSetup(new int[]{2}, vbPointShadowMap);
-//        rectData.clear();
-//        rectData.pushPolygon(Shape2d.createRect(new Vector2f(-1), new Vector2f(2)));
-//        vbPointShadowMap.bufferData(rectData);
-//
-//        pointShadowMapShader.autoInitializeShadersMulti("res/shaders/3d_point_shadow_map.glsl");
-//        pointShadowMapShader.uniform1f("farPlane", camera.far);
-//        for (int i = 0; i < 2; i++) {
-//            CubeMap texture = pointShadowTextures.get(i);
-//            FrameBuffer fb = pointShadowMaps.get(i);
-//            texture.storedFormat = GL45.GL_DEPTH_COMPONENT;
-//            texture.pixelDataType = GL_FLOAT;
-//            texture.genId();
-//            texture.bind();
-//            for (int face = 0; face < 6; face++) texture.useCustomFace(face, SHADOW_MAP_SIZE);
-//            texture.useNearestInterpolation();
-//            texture.useClampEdgeWrap();
-//            fb.genId();
-//            fb.bind();
-//            fb.attachDepthBuffer(texture);
-//            fb.checkCompletionOrError();
-//        }
-//        FrameBuffer.unbind();
-//        pointShadowProjection = new Matrix4f().perspective((float) Math.toRadians(90), (float) SHADOW_MAP_SIZE.width / (float) SHADOW_MAP_SIZE.height, camera.near, camera.far);
-//
-//        parallaxPlane.loadShape(ParShapes.par_shapes_create_plane(1, 1));
-//        parallaxPlane.modelTransform = new Matrix4f().translate(-1, 3, 1).rotateX((float) Math.PI * -.5f).scale(2);
-//        shParallax.autoInitializeShadersMulti("res/shaders/3d_parallax.glsl");
-//        skyLight.uniformValues("skyLight", shParallax);
-//        pDiffuse = new Texture2d("res/textures/stone-wall/albedo.png");
-//        pNormal = new Texture2d("res/textures/stone-wall/normal.png");
-//        pHeight = new Texture2d("res/textures/stone-wall/height.png");
-//        pDiffuse.useLinearInterpolation();
-//        pNormal.useLinearInterpolation();
-//        pHeight.useLinearInterpolation();
-//        camera.bindShaderToUniformBlock(shParallax);
-//
-//        shShapes.autoInitializeShadersMulti("res/shaders/3d_shapes.glsl");
-//        camera.bindShaderToUniformBlock(shShapes);
-//        ParShapesMesh ico = ParShapes.par_shapes_create_icosahedron();
-//        ParShapes.par_shapes_unweld(ico, true);
-//        ParShapes.par_shapes_compute_normals(ico);
-//        shapes[0].loadShape(ico);
-//        shapes[0].modelTransform = new Matrix4f().translate(-4, 0, 10);
-//        shapes[1].loadShape(ParShapes.par_shapes_create_cone(10, 1));
-//        shapes[1].loadShape(ParShapes.par_shapes_create_cylinder(10, 1), 0);
-//        shapes[1].modelTransform = new Matrix4f().translate(-2, 0, 10).rotateX((float) Math.PI * -.5f);
-//        shapes[2].loadShape(ParShapes.par_shapes_create_hemisphere(10, 10));
-//        shapes[2].modelTransform = new Matrix4f().translate(0, 0, 10);
-//        shapes[3].loadShape(ParShapes.par_shapes_create_torus(10, 10, .5f));
-//        shapes[3].modelTransform = new Matrix4f().translate(3, 0, 10);
+        ballerCube.genId();
+        ballerCube.loadFaces("res/textures/baller.png");
+        ballerCube.useNearestInterpolation();
+        ballerCube.useClampEdgeWrap();
+        CubeMap.unbind(0);
 
-        TextObject toHint = new TextObject(1, "m", new Vector2f(100, 100), Color.CYAN, Color.RED);
-        toHint.setBgMargin(new Vector2f(10));
+        shCubeMap.autoInitializeShadersMulti("res/shaders/3d_cube_map.glsl");
+        shReflect.autoInitializeShadersMulti("res/shaders/3d_reflect.glsl");
+        shOutline.autoInitializeShadersMulti("res/shaders/3d_outline.glsl");
+        shLightSource.autoInitializeShadersMulti("res/shaders/3d_light_source.glsl");
+
+        camera.bindShaderToUniformBlock(shCubeMap, shReflect, shOutline, shLightSource);
+        skyBox.setupBuffers(camera, "res/textures/space_skybox", "png");
+
+        ParShapesMesh cube = ParShapes.par_shapes_create_cube();
+        assert cube != null;
+        ParShapes.par_shapes_translate(cube, -.5f, -.5f, -.5f);
+        ParShapes.par_shapes_unweld(cube, true);
+        ParShapes.par_shapes_compute_normals(cube);
+        cubeModel.loadShape(cube);
+
+        VertexArrayBuffer vbPost = new VertexArrayBuffer();
+        shPost.autoInitializeShadersMulti("res/shaders/3d_post_processing.glsl");
+        shPost.uniform1i("bloomOnly", 0);
+        vaPost.genId();
+        vbPost.genId();
+
+        vaPost.fastSetup(new int[]{2}, vbPost);
+        BufferBuilder2f rectData = new BufferBuilder2f(true);
+        rectData.pushPolygon(Shape2d.createRect(new Vector2f(-1), new Vector2f(2)));
+        vbPost.bufferData(rectData);
+
+        fb.genId();
+        FrameBuffer.RenderBuffer rb = new FrameBuffer.RenderBuffer(true);
+        rb.createBufferMultisample(SCREEN_SIZE_DIM, GL45.GL_DEPTH24_STENCIL8, GL45.GL_DEPTH_STENCIL_ATTACHMENT, 4);
+        fb.attachColourBuffer2D(fb.setupDefaultColourMultisampleBuffer(4));
+        fb.attachColourBuffer2D(fb.setupDefaultColourMultisampleBuffer(4));
+        fb.attachRenderBuffer(rb);
+        fb.drawToMultipleColourBuffers(0, 1);
+        fb.intermediaryFB = fb.createIntermediaryFB();
+        fb.intermediaryFB.attachColourBuffer2D(fb.intermediaryFB.setupDefaultColourBuffer(), fb.intermediaryFB.setupDefaultColourBuffer());
+        fb.intermediaryFB.checkCompletionOrError();
+        fb.checkCompletionOrError();
+
+        for (FrameBuffer fb : pingPongFbs) {
+            fb.genId();
+            fb.attachColourBuffer2D(fb.setupDefaultColourBuffer());
+            fb.checkCompletionOrError();
+        }
+        FrameBuffer.unbind();
+        gaussianBlurSh.autoInitializeShadersMulti("res/shaders/3d_gaussian_blur.glsl");
+
+        Matrix4f skyLightProjection = new Matrix4f().ortho(-8, 8, -8, 8, camera.near, camera.far);
+        Matrix4f skyLightView = new Matrix4f().lookAt(skyLight.direction.negate(new Vector3f()).mul(3), new Vector3f(), new Vector3f(0, 1, 0));
+        lightSpaceMatrix = skyLightProjection.mul(skyLightView);
+        shadowMapShader.autoInitializeShadersMulti("res/shaders/3d_shadow_map.glsl");
+        shadowMapShader.uniformMatrix4f("lightSpaceMatrix", lightSpaceMatrix);
+        shadowMap.genId();
+        Texture depthMap = FrameBuffer.setupDefaultDepthBuffer(SHADOW_MAP_SIZE);
+        depthMap.useNearestInterpolation();
+        depthMap.useRepeatWrap();
+        shadowMap.attachDepthBuffer2D(depthMap);
+        shadowMap.drawBufferNone();
+        shadowMap.readBufferNone();
+        shadowMap.checkCompletionOrError();
+        FrameBuffer.unbind();
+
+        VertexArrayBuffer vbShadowMap = new VertexArrayBuffer();
+        displayShadowMapShader.autoInitializeShadersMulti("res/shaders/3d_shadow_display_map.glsl");
+        displayShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.75f, .75f, 0).scale(.25f));
+        vaDisplayShadowMap.genId();
+        vbShadowMap.genId();
+        vaDisplayShadowMap.fastSetup(new int[]{2}, vbShadowMap);
+        rectData.clear();
+        rectData.pushPolygon(Shape2d.createRect(new Vector2f(0), new Vector2f(1)));
+        vbShadowMap.bufferData(rectData);
+
+        modelShader.autoInitializeShadersMulti("res/shaders/3d_model.glsl");
+        modelShader.uniformMatrix4f("lightSpaceMatrix", lightSpaceMatrix);
+        modelShader.uniform1f("flashLightStrength", 0);
+        modelShader.uniform1f("farPlane", camera.far);
+        camera.bindShaderToUniformBlock(modelShader);
+
+        modelFloor.loadModel("res/models/crate/NEWCRATE.fbx", true);
+        modelFloor.modelTransform.translate(0, -6, 1).scale(10, 10, 22);
+
+        modelTiles.loadModel("res/models/tiles/plane.fbx", true);
+        modelTiles.modelTransform.translate(0, -0.99f, 0).scale(.01f);
+        modelTiles.getMaterial(0).diffuseTexture.useLinearInterpolation();
+        modelTiles.getMaterial(0).normalMap.useLinearInterpolation();
+
+        model.loadModel("res/models/roblox/scene.gltf", true);
+        model.modelTransform.translate(-2, -1f, 1).rotateY(1);
+        model.setupBoneRendering(camera);
+
+        model2.loadModel("res/models/guard/scene.md5mesh", true);
+        model2.modelTransform.scale(.03f).translate(0, -33, -40);
+        model2.setupBoneRendering(camera);
+
+        model3.loadModel("res/models/bloxycola/cola.obj", true);
+        model3.modelTransform.translate(2, -.55f, 0).rotateY(2.1f);
+
+        model4.loadModel("res/models/miku/miku_prefab.fbx", true);
+        model4.modelTransform.translate(-3, -1, 2.5f).rotateY(1.2f);
+
+        lightRed.setColourValues(new Vector3f(2, 0, 0), new Vector3f(5, 0, 0), new Vector3f());
+        lightBlue.setColourValues(new Vector3f(0, 0, 2), new Vector3f(0, 0, .8f), new Vector3f());
+        lightGroup.addLight(lightRed, lightBlue);
+
+        skyLight.diffuse = new Vector3f(.8f);
+        skyLight.specular = new Vector3f(2);
+        skyLight.ambient = new Vector3f(.3f);
+        skyLight.uniformValues("skyLight", modelShader);  // never changes
+
+        spotLight.setColourValues(new Vector3f(1), new Vector3f(.6f), new Vector3f());
+
+        displayPointShadowMapShader.autoInitializeShadersMulti("res/shaders/3d_point_shadow_display_map.glsl");
+        camera.bindShaderToUniformBlock(displayPointShadowMapShader);
+        VertexArrayBuffer vbPointShadowMap = new VertexArrayBuffer();
+        vaDisplayPointShadowMap.genId();
+        vbPointShadowMap.genId();
+        vaDisplayPointShadowMap.fastSetup(new int[]{2}, vbPointShadowMap);
+        rectData.clear();
+        rectData.pushPolygon(Shape2d.createRect(new Vector2f(-1), new Vector2f(2)));
+        vbPointShadowMap.bufferData(rectData);
+
+        pointShadowMapShader.autoInitializeShadersMulti("res/shaders/3d_point_shadow_map.glsl");
+        pointShadowMapShader.uniform1f("farPlane", camera.far);
+        for (int i = 0; i < 2; i++) {
+            CubeMap texture = pointShadowTextures.get(i);
+            FrameBuffer fb = pointShadowMaps.get(i);
+            texture.storedFormat = GL45.GL_DEPTH_COMPONENT;
+            texture.pixelDataType = GL_FLOAT;
+            texture.genId();
+            texture.bind();
+            for (int face = 0; face < 6; face++) texture.useCustomFace(face, SHADOW_MAP_SIZE);
+            texture.useNearestInterpolation();
+            texture.useClampEdgeWrap();
+            fb.genId();
+            fb.bind();
+            fb.attachDepthBuffer(texture);
+            fb.checkCompletionOrError();
+        }
+        FrameBuffer.unbind();
+        pointShadowProjection = new Matrix4f().perspective((float) Math.toRadians(90), (float) SHADOW_MAP_SIZE.width / (float) SHADOW_MAP_SIZE.height, camera.near, camera.far);
+
+        parallaxPlane.loadShape(ParShapes.par_shapes_create_plane(1, 1));
+        parallaxPlane.modelTransform = new Matrix4f().translate(-1, 3, 1).rotateX((float) Math.PI * -.5f).scale(2);
+        shParallax.autoInitializeShadersMulti("res/shaders/3d_parallax.glsl");
+        skyLight.uniformValues("skyLight", shParallax);
+        pDiffuse = new Texture2d("res/textures/stone-wall/albedo.png");
+        pNormal = new Texture2d("res/textures/stone-wall/normal.png");
+        pHeight = new Texture2d("res/textures/stone-wall/height.png");
+        pDiffuse.useLinearInterpolation();
+        pNormal.useLinearInterpolation();
+        pHeight.useLinearInterpolation();
+        camera.bindShaderToUniformBlock(shParallax);
+
+        shShapes.autoInitializeShadersMulti("res/shaders/3d_shapes.glsl");
+        camera.bindShaderToUniformBlock(shShapes);
+        ParShapesMesh ico = ParShapes.par_shapes_create_icosahedron();
+        assert ico != null;
+        ParShapes.par_shapes_unweld(ico, true);
+        ParShapes.par_shapes_compute_normals(ico);
+        shapes[0].loadShape(ico);
+        shapes[0].modelTransform = new Matrix4f().translate(-4, 0, 10);
+        shapes[1].loadShape(ParShapes.par_shapes_create_cone(10, 1));
+        shapes[1].loadShape(ParShapes.par_shapes_create_cylinder(10, 1), 0);
+        shapes[1].modelTransform = new Matrix4f().translate(-2, 0, 10).rotateX((float) Math.PI * -.5f);
+        shapes[2].loadShape(ParShapes.par_shapes_create_hemisphere(10, 10));
+        shapes[2].modelTransform = new Matrix4f().translate(0, 0, 10);
+        shapes[3].loadShape(ParShapes.par_shapes_create_torus(10, 10, .5f));
+        shapes[3].modelTransform = new Matrix4f().translate(3, 0, 10);
+
+        TextObject t1 = new TextObject(1, "[tab] controls menu", new Vector2f(-5), Color.CYAN, Color.BLACK);
+        TextObject t2 = new TextObject(2, "[f] change camera mode", new Vector2f(-5, -35), Color.WHITE, Color.BLACK);
+        t1.setBgMargin(new Vector2f(5));
+        t2.setBgMargin(new Vector2f(5));
         textHint.setupDefaultShader(uiCamera);
-        textHint.pushTextObject(toHint);
-        textHint.setModelTransform(new Matrix4f().identity().scale(1f/80f, 1f/80f, 1));
+        textHint.pushTextObject(t1, t2);
+        textHint.setModelTransform(new Matrix4f().identity().translate(CAPTURE_UI_SIZE.x, CAPTURE_UI_SIZE.y, 0).scale((1f / SCREEN_SIZE.x) * 2 * CAPTURE_UI_SIZE.x, (1f / SCREEN_SIZE.y) * 2 * CAPTURE_UI_SIZE.y, 1));
+
+        TextObject m1 = new TextObject(2, """
+                -- Movement --
+                [wasd]        move (can move only in fly mode)
+                [qe]          move vertically (view relative)
+                [ctrl space]  move vertically (world relative)
+                [arrow keys]  view angle
+                [hold rmb]    view angle (hold and drag mouse)
+                [scroll]      quick move (forward relative)
+                [shift alt]   alter movement speed (when held)
+                [f]           change camera mode (target / fly)
+                [esc]         close
+                
+                -- Debug --
+                [1234567]     play animations
+                [l]           stop all animations
+                [,.]          alter animation speed (roblox model only)
+                [m]           toggle wireframe
+                [g]           toggle flashlight
+                [o]           toggle bloom view
+                [grave]       toggle bone matrices view
+                """, new Vector2f(-5), Color.WHITE, Color.BLACK);
+        m1.setBgMargin(new Vector2f(5));
+        m1.setYSpacing(5);
+        textMenu.setupDefaultShader(uiCamera);
+        textMenu.pushTextObject(m1);
+        textMenu.setModelTransform(new Matrix4f().identity().translate(CAPTURE_UI_SIZE.x, 3, 0).scale((1f / SCREEN_SIZE.x) * 2 * CAPTURE_UI_SIZE.x, (1f / SCREEN_SIZE.y) * 2 * CAPTURE_UI_SIZE.y, 1));
         uiCamera.updateUniformBlock();  // ui never changes
     }
 
-//    public Matrix4f[] generatePointShadowTransformMatrices(PointLight light) {
-//        return new Matrix4f[] {
-//                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(1, 0, 0, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f()),
-//                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(-1, 0, 0, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f()),
-//                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, 1, 0, new Vector3f()), new Vector3f(0, 0, 1)), new Matrix4f()),
-//                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, -1, 0, new Vector3f()), new Vector3f(0, 0, -1)), new Matrix4f()),
-//                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, 0, 1, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f()),
-//                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, 0, -1, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f())
-//        };
-//    }
+    public Matrix4f[] generatePointShadowTransformMatrices(PointLight light) {
+        return new Matrix4f[]{
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(1, 0, 0, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f()),
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(-1, 0, 0, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f()),
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, 1, 0, new Vector3f()), new Vector3f(0, 0, 1)), new Matrix4f()),
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, -1, 0, new Vector3f()), new Vector3f(0, 0, -1)), new Matrix4f()),
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, 0, 1, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f()),
+                pointShadowProjection.mul(new Matrix4f().lookAt(light.position, light.position.add(0, 0, -1, new Vector3f()), new Vector3f(0, -1, 0)), new Matrix4f())
+        };
+    }
 
     public void update(double dt) {
-//        camera.processKeyInputs(window, dt);
-//        model.updateAnimation(dt);
-//        model2.updateAnimation(dt);
-//        double t = glfwGetTime() * .4;
+        camera.processKeyInputs(window, dt);
+        model.updateAnimation(dt);
+        model2.updateAnimation(dt);
+        double t = glfwGetTime() * .4;
 
-//        lightRed.position.z = 3 * (float) Math.sin(t);
-//        lightRed.position.x = 3 * (float) Math.cos(t);
-//        lightBlue.position.z = (float) Math.cos(t);
-//        lightBlue.position.x = (float) Math.sin(t);
-//        lightGroup.uniformValuesAsArray("pointLights", modelShader);
-//        spotLight.position = camera.getPos();
-//        spotLight.direction = camera.getForward();
-//        spotLight.uniformValues("spotLight", modelShader);
-//
-//        model3.modelTransform.setRotationXYZ(0, 0, 0).rotateY((float) glfwGetTime());
-//        model4.modelTransform.setRotationXYZ(0, 0, 0).rotateY((float) glfwGetTime());
+        lightRed.position.z = 3 * (float) Math.sin(t);
+        lightRed.position.x = 3 * (float) Math.cos(t);
+        lightBlue.position.z = (float) Math.cos(t);
+        lightBlue.position.x = (float) Math.sin(t);
+        lightGroup.uniformValuesAsArray("pointLights", modelShader);
+        spotLight.position = camera.getPos();
+        spotLight.direction = camera.getForward();
+        spotLight.uniformValues("spotLight", modelShader);
+
+        model3.modelTransform.setRotationXYZ(0, 0, 0).rotateY((float) glfwGetTime());
+        model4.modelTransform.setRotationXYZ(0, 0, 0).rotateY((float) glfwGetTime());
     }
 
     public void render() {
-//        GPUProfiler.dumpAllLogs(true);
-//        GPUProfiler.startFrame();
-//        float time = (float) glfwGetTime();
-//
-//        Matrix4f matModel1 = new Matrix4f().identity().translate(10, 0, -10);
-//        Matrix4f matModel2 = new Matrix4f().identity().translate(10, 0, -10);
-//        matModel2.rotateX(time * (float) Math.toRadians(120));
-//        matModel2.rotateY(time * (float) Math.toRadians(70));
-//        matModel2.translate(0, 0, 1.2f);
-//        matModel2.scale(.8f, .5f, .5f);
-//
-//        // --- SHADOW MAPS --- //
-//        GPUProfiler.startLog("shadow maps");
-//        {
-//            GPUProfiler.startLog("direction map");
-//            shadowMap.bind();
-//            Renderer.setViewportSize(SHADOW_MAP_SIZE.width, SHADOW_MAP_SIZE.height);
-//            Renderer.clearD();
-//            Renderer.enableDepthTest();
-//            Renderer.cullFrontFace();
-//            modelFloor.draw(shadowMapShader, 0, modelFloorTrans1);
-//            modelFloor.draw(shadowMapShader, 0, modelFloorTrans2);
-//            Renderer.cullBackFace();
-//            model.draw(shadowMapShader, 0);
-//            model2.draw(shadowMapShader, 0);
-//            model3.draw(shadowMapShader, 0);
-//            model4.draw(shadowMapShader, 0);
-//            FrameBuffer.unbind();
-//            GPUProfiler.endLog();
-//
-//            GPUProfiler.startLog("point maps");
-//            Renderer.enableDepthTest();
-//            for (int i = 0; i < pointShadowMaps.size(); i++) {
-//                FrameBuffer fb = pointShadowMaps.get(i);
-//                PointLight light = (PointLight) lightGroup.lights.get(i);
-//                fb.bind();
-//                Renderer.clearD();
-//                pointShadowMapShader.uniformMatrix4fArray("shadowMatrices", generatePointShadowTransformMatrices(light));
-//                pointShadowMapShader.uniform3f("lightPos", light.position);
-//                model.draw(pointShadowMapShader, 0);
-//                model2.draw(pointShadowMapShader, 0);
-//                model3.draw(pointShadowMapShader, 0);
-//                model4.draw(pointShadowMapShader, 0);
-//            }
-//            FrameBuffer.unbind();
-//            Renderer.setViewportSize(SCREEN_SIZE.width, SCREEN_SIZE.height);
-//            GPUProfiler.endLog();
-//        }
-//        GPUProfiler.endLog();
-//
-//        // --- 3D SPACE --- //
-//        GPUProfiler.startLog("3d boxes");
-//        fb.bind();
-//        camera.updateUniformBlock();
-//        Renderer.enableStencilTest();
-//        Renderer.cullBackFace();
-//        Renderer.setStencilFunc(GL_ALWAYS, 1, true);  // write 1 to all fragments that pass
-//        Renderer.enableStencilWriting();
-//        Renderer.clearCDS();
-//
-//        // outline boxes
-//        shCubeMap.bind();
-//        ballerCube.bind();
-//        drawObjects(matModel1, matModel2, shCubeMap);
-//        Renderer.setStencilFunc(GL_NOTEQUAL, 1, true);  // only draw if fragment in stencil is NOT equal to 1
-//        Renderer.disableStencilWriting();
-//        Renderer.cullFrontFace();
-//        drawObjects(matModel1.scale(1.2f), matModel2.scale(1.2f), shOutline);
-//        Renderer.cullBackFace();
-//        Renderer.disableStencilTest();
-//
-//        // sky box reflector
-//        skyBox.bindSkyBoxTexture();
-//        shReflect.bind();
-//        shReflect.uniform3f("camPos", camera.getPos());
-//        cubeModel.modelTransform = matModel1.translate(2, 0, 0);
-//        cubeModel.draw(shReflect, 0);
-//        GPUProfiler.endLog();
-//
-//        // parallax plane
-//        GPUProfiler.startLog("parallax");
-//        shParallax.bind();
-//        shParallax.uniform3f("viewPos", camera.getPos());
-//        shParallax.uniformTexture("diffuseTexture", pDiffuse, 0);
-//        shParallax.uniformTexture("normalMap", pNormal, 1);
-//        shParallax.uniformTexture("heightMap", pHeight, 2);
-//        parallaxPlane.draw(shParallax, 3);
-//        GPUProfiler.endLog();
-//
-//        // shapes
-//        GPUProfiler.startLog("shapes");
-//        shShapes.bind();
-//        for (Model shape : shapes) shape.draw(shShapes, 0);
-//        GPUProfiler.endLog();
-//
-//        // models
-//        GPUProfiler.startLog("models");
-//        modelShader.uniform3f("viewPos", camera.getPos());
-//        modelShader.uniformTexture("shadowMap", shadowMap.depthBuffer, 0);
-//        modelShader.uniformTexture("pointShadowMaps[0]", pointShadowMaps.getFirst().depthBuffer, 1);
-//        modelShader.uniformTexture("pointShadowMaps[1]", pointShadowMaps.get(1).depthBuffer, 2);
-//        modelFloor.draw(modelShader, 3);
-//        modelFloor.draw(modelShader, 3, modelFloorTrans1);
-//        modelFloor.draw(modelShader, 3, modelFloorTrans2);
-//        modelShader.uniformBool("useNormalMap", true);
-//        modelTiles.draw(modelShader, 3);
-//        modelShader.uniformBool("useNormalMap", false);
-//        model.draw(modelShader, 3);
-//        model2.draw(modelShader, 3);
-//        model3.draw(modelShader, 3);
-//        model4.draw(modelShader, 3);
-//        GPUProfiler.endLog();
-//
-//        // light sources
-//        GPUProfiler.startLog("light sources");
-//        shLightSource.bind();
-//        shLightSource.uniform3f("lightColour", lightRed.diffuse);
-//        cubeModel.modelTransform = new Matrix4f().translate(lightRed.position).scale(.3f);
-//        cubeModel.draw(shLightSource, 0);
-//        shLightSource.uniform3f("lightColour", lightBlue.diffuse);
-//        cubeModel.modelTransform = new Matrix4f().translate(lightBlue.position).scale(.3f);
-//        cubeModel.draw(shLightSource, 0);
-//        GPUProfiler.endLog();
-//
-//        skyBox.draw();
-//        fb.blitIntoIntermediaryFB(GL_COLOR_BUFFER_BIT, GL_NEAREST, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT0);
-//        fb.blitIntoIntermediaryFB(GL_COLOR_BUFFER_BIT, GL_NEAREST, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT1);
-//
-//        // gaussian blur for bloom
-//        GPUProfiler.startLog("gaussian blur");
-//        FrameBuffer.unbind();
-//        Renderer.clearC();
-//        boolean firstIter = true;
-//        int gaussianAmount = 4;
-//        gaussianBlurSh.bind();
-//        for (int i = 0; i < gaussianAmount; i++) {
-//            int inx = i % 2;
-//            pingPongFbs[inx].bind();
-//            gaussianBlurSh.uniform1i("horizontal", inx);
-//            if (firstIter) {
-//                fb.intermediaryFB.colourBuffers.get(1).bind();
-//                firstIter = false;
-//            } else pingPongFbs[1 - inx].colourBuffers.getFirst().bind();
-//            vaPost.drawArrays(GL_TRIANGLE_STRIP, 4);
-//        }
-//        GPUProfiler.endLog();
-//
-//        // --- POST PROCESSING --- //
-//        GPUProfiler.startLog("post processing");
-//        FrameBuffer.unbind();
-//        Renderer.clearC();
-//        Renderer.disableDepthTest();
-//
-//        shPost.bind();
-//        shPost.uniformTexture("screenTexture", fb.intermediaryFB.colourBuffers.getFirst(), 0);
-//        shPost.uniformTexture("bloomTexture", pingPongFbs[1 - (gaussianAmount % 2)].colourBuffers.getFirst(), 1);
-//        vaPost.drawArrays(GL_TRIANGLE_STRIP, 4);
-//        GL45.glActiveTexture(GL45.GL_TEXTURE0);
-//        GPUProfiler.endLog();
-//
-//        // debug shadow map
-//        displayShadowMapShader.bind();
-//        shadowMap.depthBuffer.bind();
-//        vaDisplayShadowMap.drawArrays(GL_TRIANGLE_STRIP, 4);
-//
-//        displayPointShadowMapShader.bind();
-//        displayPointShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.875f, .5f, 0).scale(.125f));
-//        pointShadowMaps.getFirst().depthBuffer.bind();
-//        vaDisplayPointShadowMap.drawArrays(GL_TRIANGLE_STRIP, 4);
-//
-//        displayPointShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.875f, .25f, 0).scale(.125f));
-//        pointShadowMaps.get(1).depthBuffer.bind();
-//        vaDisplayPointShadowMap.drawArrays(GL_TRIANGLE_STRIP, 4);
+        GPUProfiler.dumpAllLogs(true);
+        GPUProfiler.startFrame();
+        float time = (float) glfwGetTime();
 
-        Renderer.enableDepthTest();
+        Matrix4f matModel1 = new Matrix4f().identity().translate(10, 0, -10);
+        Matrix4f matModel2 = new Matrix4f().identity().translate(10, 0, -10);
+        matModel2.rotateX(time * (float) Math.toRadians(120));
+        matModel2.rotateY(time * (float) Math.toRadians(70));
+        matModel2.translate(0, 0, 1.2f);
+        matModel2.scale(.8f, .5f, .5f);
+
+        // --- SHADOW MAPS --- //
+        GPUProfiler.startLog("shadow maps");
+        {
+            GPUProfiler.startLog("direction map");
+            shadowMap.bind();
+            Renderer.setViewportSize(SHADOW_MAP_SIZE.width, SHADOW_MAP_SIZE.height);
+            Renderer.clearD();
+            Renderer.enableDepthTest();
+            Renderer.cullFrontFace();
+            modelFloor.draw(shadowMapShader, 0, modelFloorTrans1);
+            modelFloor.draw(shadowMapShader, 0, modelFloorTrans2);
+            Renderer.cullBackFace();
+            model.draw(shadowMapShader, 0);
+            model2.draw(shadowMapShader, 0);
+            model3.draw(shadowMapShader, 0);
+            model4.draw(shadowMapShader, 0);
+            FrameBuffer.unbind();
+            GPUProfiler.endLog();
+
+            GPUProfiler.startLog("point maps");
+            Renderer.enableDepthTest();
+            for (int i = 0; i < pointShadowMaps.size(); i++) {
+                FrameBuffer fb = pointShadowMaps.get(i);
+                PointLight light = (PointLight) lightGroup.lights.get(i);
+                fb.bind();
+                Renderer.clearD();
+                pointShadowMapShader.uniformMatrix4fArray("shadowMatrices", generatePointShadowTransformMatrices(light));
+                pointShadowMapShader.uniform3f("lightPos", light.position);
+                model.draw(pointShadowMapShader, 0);
+                model2.draw(pointShadowMapShader, 0);
+                model3.draw(pointShadowMapShader, 0);
+                model4.draw(pointShadowMapShader, 0);
+            }
+            FrameBuffer.unbind();
+            Renderer.setViewportSize(SCREEN_SIZE_DIM.width, SCREEN_SIZE_DIM.height);
+            GPUProfiler.endLog();
+        }
+        GPUProfiler.endLog();
+
+        // --- 3D SPACE --- //
+        GPUProfiler.startLog("3d boxes");
+        fb.bind();
+        camera.updateUniformBlock();
+        Renderer.enableStencilTest();
+        Renderer.cullBackFace();
+        Renderer.setStencilFunc(GL_ALWAYS, 1, true);  // write 1 to all fragments that pass
+        Renderer.enableStencilWriting();
+        Renderer.clearCDS();
+
+        // outline boxes
+        shCubeMap.bind();
+        ballerCube.bind();
+        drawObjects(matModel1, matModel2, shCubeMap);
+        Renderer.setStencilFunc(GL_NOTEQUAL, 1, true);  // only draw if fragment in stencil is NOT equal to 1
+        Renderer.disableStencilWriting();
+        Renderer.cullFrontFace();
+        drawObjects(matModel1.scale(1.2f), matModel2.scale(1.2f), shOutline);
+        Renderer.cullBackFace();
+        Renderer.disableStencilTest();
+
+        // sky box reflector
+        skyBox.bindSkyBoxTexture();
+        shReflect.bind();
+        shReflect.uniform3f("camPos", camera.getPos());
+        cubeModel.modelTransform = matModel1.translate(2, 0, 0);
+        cubeModel.draw(shReflect, 0);
+        GPUProfiler.endLog();
+
+        // parallax plane
+        GPUProfiler.startLog("parallax");
+        shParallax.bind();
+        shParallax.uniform3f("viewPos", camera.getPos());
+        shParallax.uniformTexture("diffuseTexture", pDiffuse, 0);
+        shParallax.uniformTexture("normalMap", pNormal, 1);
+        shParallax.uniformTexture("heightMap", pHeight, 2);
+        parallaxPlane.draw(shParallax, 3);
+        GPUProfiler.endLog();
+
+        // shapes
+        GPUProfiler.startLog("shapes");
+        shShapes.bind();
+        for (Model shape : shapes) shape.draw(shShapes, 0);
+        GPUProfiler.endLog();
+
+        // models
+        GPUProfiler.startLog("models");
+        modelShader.uniform3f("viewPos", camera.getPos());
+        modelShader.uniformTexture("shadowMap", shadowMap.depthBuffer, 0);
+        modelShader.uniformTexture("pointShadowMaps[0]", pointShadowMaps.getFirst().depthBuffer, 1);
+        modelShader.uniformTexture("pointShadowMaps[1]", pointShadowMaps.get(1).depthBuffer, 2);
+        modelFloor.draw(modelShader, 3);
+        modelFloor.draw(modelShader, 3, modelFloorTrans1);
+        modelFloor.draw(modelShader, 3, modelFloorTrans2);
+        modelShader.uniformBool("useNormalMap", true);
+        modelTiles.draw(modelShader, 3);
+        modelShader.uniformBool("useNormalMap", false);
+        model.draw(modelShader, 3);
+        model2.draw(modelShader, 3);
+        model3.draw(modelShader, 3);
+        model4.draw(modelShader, 3);
+        GPUProfiler.endLog();
+
+        // light sources
+        GPUProfiler.startLog("light sources");
+        shLightSource.bind();
+        shLightSource.uniform3f("lightColour", lightRed.diffuse);
+        cubeModel.modelTransform = new Matrix4f().translate(lightRed.position).scale(.3f);
+        cubeModel.draw(shLightSource, 0);
+        shLightSource.uniform3f("lightColour", lightBlue.diffuse);
+        cubeModel.modelTransform = new Matrix4f().translate(lightBlue.position).scale(.3f);
+        cubeModel.draw(shLightSource, 0);
+        GPUProfiler.endLog();
+
+        skyBox.draw();
+        fb.blitIntoIntermediaryFB(GL_COLOR_BUFFER_BIT, GL_NEAREST, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT0);
+        fb.blitIntoIntermediaryFB(GL_COLOR_BUFFER_BIT, GL_NEAREST, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT1);
+
+        // gaussian blur for bloom
+        GPUProfiler.startLog("gaussian blur");
+        FrameBuffer.unbind();
+        Renderer.clearC();
+        boolean firstIter = true;
+        int gaussianAmount = 4;
+        gaussianBlurSh.bind();
+        for (int i = 0; i < gaussianAmount; i++) {
+            int inx = i % 2;
+            pingPongFbs[inx].bind();
+            gaussianBlurSh.uniform1i("horizontal", inx);
+            if (firstIter) {
+                fb.intermediaryFB.colourBuffers.get(1).bind();
+                firstIter = false;
+            } else pingPongFbs[1 - inx].colourBuffers.getFirst().bind();
+            vaPost.drawArrays(GL_TRIANGLE_STRIP, 4);
+        }
+        GPUProfiler.endLog();
+
+        // --- POST PROCESSING --- //
+        GPUProfiler.startLog("post processing");
+        FrameBuffer.unbind();
+        Renderer.clearC();
+        Renderer.disableDepthTest();
+
+        shPost.bind();
+        shPost.uniformTexture("screenTexture", fb.intermediaryFB.colourBuffers.getFirst(), 0);
+        shPost.uniformTexture("bloomTexture", pingPongFbs[1 - (gaussianAmount % 2)].colourBuffers.getFirst(), 1);
+        vaPost.drawArrays(GL_TRIANGLE_STRIP, 4);
+        GL45.glActiveTexture(GL45.GL_TEXTURE0);
+        GPUProfiler.endLog();
+
+        // debug shadow map
+        displayShadowMapShader.bind();
+        shadowMap.depthBuffer.bind();
+        vaDisplayShadowMap.drawArrays(GL_TRIANGLE_STRIP, 4);
+
+        displayPointShadowMapShader.bind();
+        displayPointShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.875f, .5f, 0).scale(.125f));
+        pointShadowMaps.getFirst().depthBuffer.bind();
+        vaDisplayPointShadowMap.drawArrays(GL_TRIANGLE_STRIP, 4);
+
+        displayPointShadowMapShader.uniformMatrix4f("transform", new Matrix4f().translate(.875f, .25f, 0).scale(.125f));
+        pointShadowMaps.get(1).depthBuffer.bind();
+        vaDisplayPointShadowMap.drawArrays(GL_TRIANGLE_STRIP, 4);
+
+        // UI
         Renderer.enableFaceCulling();
         textHint.draw();
+        if (hotkeyMenu) textMenu.draw();
 
         Renderer.finish(window);
-//        GPUProfiler.endFrame();
+        GPUProfiler.endFrame();
     }
 
     private void drawObjects(Matrix4f model1, Matrix4f model2, ShaderProgram sh) {
-//        cubeModel.modelTransform = model1;
-//        cubeModel.draw(sh, 0);
-//        cubeModel.modelTransform = model2;
-//        cubeModel.draw(sh, 0);
+        cubeModel.modelTransform = model1;
+        cubeModel.draw(sh, 0);
+        cubeModel.modelTransform = model2;
+        cubeModel.draw(sh, 0);
     }
 
     @Override

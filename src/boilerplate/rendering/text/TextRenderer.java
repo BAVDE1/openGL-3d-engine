@@ -50,7 +50,13 @@ public class TextRenderer {
     }
 
     public void draw() {
+        draw(true);
+    }
+
+    public void draw(boolean bindTexture) {
         if (hasBeenModified) buildMeshes();
+
+        if (bindTexture) shader.uniformTexture("fontTexture", FontManager.getFinalTexture(), FontManager.FONT_TEXTURE_SLOT);
 
         if (!model.meshes.isEmpty()) {
             shader.bind();

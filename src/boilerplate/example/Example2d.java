@@ -83,9 +83,8 @@ public class Example2d extends GameBase {
 
     public Window window = new Window();
     final Vector2f SCREEN_SIZE = new Vector2f(900, 400);
-    final Vector2f CAPTURE_UI_SIZE = new Vector2f(SCREEN_SIZE.x / 200, SCREEN_SIZE.y / 200);
     final Vector2f CAPTURE_SIZE = new Vector2f(SCREEN_SIZE.x / 200, SCREEN_SIZE.y / 200);
-    CameraOrtho uiCamera = new CameraOrtho(CAPTURE_UI_SIZE);
+    CameraOrtho uiCamera = new CameraOrtho(CAPTURE_SIZE);
     CameraOrtho camera = new CameraOrtho(CAPTURE_SIZE);
 
     float captureScale = 1;
@@ -218,7 +217,7 @@ public class Example2d extends GameBase {
         to2.setBgMargin(new Vector2f(5));
         textRenderer.setupDefaultShader(uiCamera);
         textRenderer.pushTextObject(to1, to2);
-        textRenderer.setModelTransform(new Matrix4f().identity().scale(1f/SCREEN_SIZE.x, 1f/SCREEN_SIZE.y, 1).translate(SCREEN_SIZE.x * CAPTURE_SIZE.x, SCREEN_SIZE.y * CAPTURE_SIZE.y, 0).scale(2*CAPTURE_SIZE.x, 2*CAPTURE_SIZE.y, 1));
+        textRenderer.setModelTransform(new Matrix4f().identity().translate(CAPTURE_SIZE.x, CAPTURE_SIZE.y, 0).scale((1f / SCREEN_SIZE.x) * 2 * CAPTURE_SIZE.x, (1f / SCREEN_SIZE.y) * 2 * CAPTURE_SIZE.y, 1));
         uiCamera.updateUniformBlock();  // ui never changes
     }
 

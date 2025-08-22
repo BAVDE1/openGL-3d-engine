@@ -15,10 +15,10 @@ public class TextObject {
         default void build(TextObject textObject) {
         }
 
-        default void buildBackground(TextObject textObject, Vector2f linePos, float lineWidth, int yAddition) {
+        default void buildBackground(TextObject textObject, Vector2f linePos, float lineWidth, float yAddition) {
         }
 
-        default void buildLine(TextObject textObject, String line, FontManager.LoadedFont font, Vector2f linePos) {
+        default void buildLine(TextObject textObject, Vector2f linePos, String line, FontManager.LoadedFont font) {
         }
 
         default void pushRect(TextObject textObject, Vector2f topLeft, Vector2f size, Vector2f texCoords, Vector2f texSize, Color colour, int zAddition) {
@@ -267,11 +267,11 @@ public class TextObject {
             public void build(TextObject textObject) {
                 FontManager.LoadedFont font = FontManager.getLoadedFont(textObject.loadedFontId);
                 int genericHeight = (int) (font.getLineHeight() * textObject.scale);
-                int yAddition = genericHeight + textObject.ySpacing;
+                float yAddition = genericHeight + textObject.ySpacing;
 
                 String[] lines = textObject.string.split("\n");
 
-                int accumulatedY = 0;
+                float accumulatedY = 0;
                 for (String line : lines) {
                     if (line.isEmpty()) {
                         accumulatedY -= genericHeight + textObject.ySpacing;
@@ -285,33 +285,33 @@ public class TextObject {
                     if (textObject.bgCol.getAlpha() > BoilerplateConstants.EPSILON)
                         buildBackground(textObject, linePos, lineWidth, yAddition);
 
-                    buildLine(textObject, line, font, linePos);
+                    buildLine(textObject, linePos, line, font);
                     accumulatedY -= yAddition;
                 }
             }
 
             @Override
-            public void buildBackground(TextObject textObject, Vector2f linePos, float lineWidth, int yAddition) {
+            public void buildBackground(TextObject textObject, Vector2f linePos, float lineWidth, float yAddition) {
                 Vector2f size = new Vector2f(lineWidth, yAddition);
                 if (!textObject.seamlessBgLines) size.y -= textObject.ySpacing;
                 pushRect(textObject, linePos.add(textObject.bgMargin, new Vector2f()), size.add(textObject.bgMargin.mul(2, new Vector2f())), new Vector2f(-1), new Vector2f(), textObject.bgCol, 1);
             }
 
             @Override
-            public void buildLine(TextObject textObject, String line, FontManager.LoadedFont font, Vector2f linePos) {
-                int accumulatedX = 0;
+            public void buildLine(TextObject textObject, Vector2f linePos, String line, FontManager.LoadedFont font) {
+                float accumulatedX = 0;
                 for (char c : line.toCharArray()) {
                     FontManager.Glyph glyph = font.getGlyph(c);
                     Vector2f size = glyph.getSize().mul(textObject.scale);
 
                     if (c == ' ') {
-                        accumulatedX -= (int) size.x;
+                        accumulatedX -= size.x;
                         continue;
                     }
 
                     Vector2f topLeft = linePos.add(accumulatedX, 0, new Vector2f());
                     pushRect(textObject, topLeft, size, glyph.texTopLeft, glyph.texSize, textObject.textColour, 0);
-                    accumulatedX -= (int) size.x;
+                    accumulatedX -= size.x;
                 }
             }
 
@@ -333,7 +333,6 @@ public class TextObject {
 
             @Override
             public void pushVertex(TextObject textObject, Vector2f pos, Vector2f texCoords, Color colour, int zAddition) {
-                System.out.println(pos);
                 for (VertexLayout.Element element : textObject.parent.vertexLayout.elements) {
                     switch (element.hint) {
                         case (VertexLayout.HINT_POSITION) ->
