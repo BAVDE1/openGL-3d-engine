@@ -55,7 +55,7 @@ public class Example3d extends GameBase {
     TextRenderer textMenu = new TextRenderer();
 
     boolean renderWireFrame = false;
-    boolean hotkeyMenu = false;
+    boolean controlsMenuVisible = false;
     boolean flashlightOn = false;
     boolean bloomOn = false;
 
@@ -155,7 +155,7 @@ public class Example3d extends GameBase {
         glfwSetKeyCallback(window.handle, (window, key, scancode, action, mods) -> {
             if (action == GLFW_PRESS) {
                 if (key == GLFW_KEY_ESCAPE) this.window.setToClose();
-                if (key == GLFW_KEY_TAB) hotkeyMenu = !hotkeyMenu;
+                if (key == GLFW_KEY_TAB) controlsMenuVisible = !controlsMenuVisible;
                 if (key == GLFW_KEY_GRAVE_ACCENT) {
                     model.renderBones(!model.renderBones);
                     model2.renderBones(!model2.renderBones);
@@ -380,13 +380,14 @@ public class Example3d extends GameBase {
         shapes[3].loadShape(ParShapes.par_shapes_create_torus(10, 10, .5f));
         shapes[3].modelTransform = new Matrix4f().translate(3, 0, 10);
 
+        Matrix4f UIMatrix = new Matrix4f().identity().translate(CAPTURE_UI_SIZE.x, CAPTURE_UI_SIZE.y, 0).scale((1f / SCREEN_SIZE.x) * 2 * CAPTURE_UI_SIZE.x, (1f / SCREEN_SIZE.y) * 2 * CAPTURE_UI_SIZE.y, 1);
         TextObject t1 = new TextObject(1, "[tab] controls menu", new Vector2f(-5), Color.CYAN, Color.BLACK);
         TextObject t2 = new TextObject(2, "[f] change camera mode", new Vector2f(-5, -35), Color.WHITE, Color.BLACK);
         t1.setBgMargin(new Vector2f(5));
         t2.setBgMargin(new Vector2f(5));
         textHint.setupDefaultShader(uiCamera);
         textHint.pushTextObject(t1, t2);
-        textHint.setModelTransform(new Matrix4f().identity().translate(CAPTURE_UI_SIZE.x, CAPTURE_UI_SIZE.y, 0).scale((1f / SCREEN_SIZE.x) * 2 * CAPTURE_UI_SIZE.x, (1f / SCREEN_SIZE.y) * 2 * CAPTURE_UI_SIZE.y, 1));
+        textHint.setModelTransform(UIMatrix);
 
         TextObject m1 = new TextObject(2, """
                 -- Movement --
@@ -408,12 +409,17 @@ public class Example3d extends GameBase {
                 [g]           toggle flashlight
                 [o]           toggle bloom view
                 [grave]       toggle bone matrices view
-                """, new Vector2f(-5), Color.WHITE, Color.BLACK);
+                
+                -- Shadow maps --
+                top: sky light, orthographic 2d texture
+                middle: red light, perspective cube map
+                bottom: blue light, perspective cube map
+                """, new Vector2f(-5, -100), Color.WHITE, Color.BLACK);
         m1.setBgMargin(new Vector2f(5));
         m1.setYSpacing(5);
         textMenu.setupDefaultShader(uiCamera);
         textMenu.pushTextObject(m1);
-        textMenu.setModelTransform(new Matrix4f().identity().translate(CAPTURE_UI_SIZE.x, 3, 0).scale((1f / SCREEN_SIZE.x) * 2 * CAPTURE_UI_SIZE.x, (1f / SCREEN_SIZE.y) * 2 * CAPTURE_UI_SIZE.y, 1));
+        textMenu.setModelTransform(UIMatrix);
         uiCamera.updateUniformBlock();  // ui never changes
     }
 
@@ -625,7 +631,7 @@ public class Example3d extends GameBase {
         // UI
         Renderer.enableFaceCulling();
         textHint.draw();
-        if (hotkeyMenu) textMenu.draw();
+        if (controlsMenuVisible) textMenu.draw();
 
         Renderer.finish(window);
         GPUProfiler.endFrame();
