@@ -106,7 +106,10 @@ public class ShaderProgram {
      * <a href="https://docs.gl/gl2/glAttachShader">Shader setup example</a>
      */
     public void attachShader(String path) {
-        int shaderType = getShaderType(path);
+        attachShader(path, getShaderType(path));
+    }
+
+    public void attachShader(String path, int shaderType) {
         if (shaderType < 0) return;  // not a shader file
 
         Scanner scanner;
@@ -177,6 +180,7 @@ public class ShaderProgram {
             case "tese", "tessellation_evaluation" -> GL_TESS_EVALUATION_SHADER;
             case "geom", "geometry" -> GL_GEOMETRY_SHADER;
             case "frag", "fragment" -> GL_FRAGMENT_SHADER;
+            case "comp", "compute" -> GL_COMPUTE_SHADER;
             default -> -1;
         };
     }
@@ -188,6 +192,7 @@ public class ShaderProgram {
             case GL_TESS_EVALUATION_SHADER -> "TESS_EVALUATION";
             case GL_GEOMETRY_SHADER -> "GEOMETRY";
             case GL_FRAGMENT_SHADER -> "FRAGMENT";
+            case GL_COMPUTE_SHADER -> "COMPUTE";
             default -> "UNKNOWN";
         };
     }
