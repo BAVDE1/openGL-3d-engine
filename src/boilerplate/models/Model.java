@@ -195,7 +195,7 @@ public class Model {
 
         if (!boneShader.isSetup()) {
             boneShader.genProgram();
-            boneShader.attachShader(BoilerplateShaders.safeFormat(BoilerplateShaders.ModelBoneVertex, "% ", camera3d.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.ModelBoneVertex");
+            boneShader.attachShader(BoilerplateShaders.safeFormat(BoilerplateShaders.ModelBoneVertex, "% ", camera3d.getUniformBlockName()), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.ModelBoneVertex");
             boneShader.attachShader(BoilerplateShaders.ModelBoneFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders.ModelBoneFragment");
             boneShader.linkProgram();
             camera3d.bindShaderToUniformBlock(boneShader);

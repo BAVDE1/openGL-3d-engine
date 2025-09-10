@@ -16,27 +16,37 @@ import java.util.HashMap;
  * array: each element base alignment equal to vec4.
  * matrix: array of column vectors (each vector is vec4) (e.g. mat4x4 = N * 4 column * 4 rows)
  */
-public class VertexUniformBuffer extends VertexBuffer {
+public class UniformBuffer extends Buffer {
     private static int blockBindingCounter = 0;
     private static final HashMap<String, Integer> blockBindings = new HashMap<>();
     Integer blockBinding;
+    String blockName;
 
-    public VertexUniformBuffer() {
+    public UniformBuffer() {
         this.bufferType = GL45.GL_UNIFORM_BUFFER;
     }
 
-    public VertexUniformBuffer(boolean generateId) {
+    public UniformBuffer(String blockName) {
         this();
+        this.blockName = blockName;
+    }
+
+    public UniformBuffer(String blockName, boolean generateId) {
+        this(blockName);
         if (generateId) genId();
     }
 
-    public void bindUniformBlock(String uniformBlock, ShaderProgram... programs) {
-        if (!blockBindings.containsKey(uniformBlock)) blockBindings.put(uniformBlock, blockBindingCounter++);
-        int blockBinding = blockBindings.get(uniformBlock);
+    public void setBlockName(String newBlockName) {
+        blockName = newBlockName;
+    }
+
+    public void bindShaderToBlock(ShaderProgram... programs) {
+        if (!blockBindings.containsKey(blockName)) blockBindings.put(blockName, blockBindingCounter++);
+        int blockBinding = blockBindings.get(blockName);
         if (this.blockBinding == null) bindBufferToBlock(blockBinding);
 
         for (ShaderProgram sh : programs) {
-            int blockInx = sh.getUniformBlockLocation(uniformBlock);
+            int blockInx = sh.getUniformBlockLocation(blockName);
             GL45.glUniformBlockBinding(sh.getProgram(), blockInx, blockBinding);
         }
     }
@@ -47,7 +57,7 @@ public class VertexUniformBuffer extends VertexBuffer {
     }
 
     public static void unbind() {
-        unbindTYpe(GL45.GL_UNIFORM_BUFFER);
+        unbindType(GL45.GL_UNIFORM_BUFFER);
     }
 
     @Override

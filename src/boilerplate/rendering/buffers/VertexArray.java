@@ -2,9 +2,6 @@ package boilerplate.rendering.buffers;
 
 import boilerplate.utility.Logging;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import static org.lwjgl.opengl.GL45.*;
 
 
@@ -40,17 +37,17 @@ public class VertexArray {
         glBindVertexArray(0);
     }
 
-    public void bindBuffer(VertexBuffer... buffers) {
+    public void bindBuffer(Buffer... buffers) {
         bufferBound = true;
         bind();
-        for (VertexBuffer vb : buffers) vb.bind();
+        for (Buffer vb : buffers) vb.bind();
     }
 
-    public void fastSetup(int[] layoutFloats, VertexBuffer... buffersToBind) {
+    public void fastSetup(int[] layoutFloats, Buffer... buffersToBind) {
         fastSetup(new VertexLayout(layoutFloats), buffersToBind);
     }
 
-    public void fastSetup(VertexLayout layout, VertexBuffer... buffersToBind) {
+    public void fastSetup(VertexLayout layout, Buffer... buffersToBind) {
         bindBuffer(buffersToBind);
         pushLayout(layout);
     }

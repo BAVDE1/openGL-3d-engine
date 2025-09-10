@@ -3,7 +3,7 @@ package boilerplate.rendering.buffers;
 import boilerplate.utility.Logging;
 import org.lwjgl.opengl.GL45;
 
-public class VertexArrayBuffer extends VertexBuffer {
+public class VertexArrayBuffer extends Buffer {
     public VertexArrayBuffer() {
         this.bufferType = GL45.GL_ARRAY_BUFFER;
         this.usage = GL45.GL_DYNAMIC_DRAW;
@@ -15,7 +15,7 @@ public class VertexArrayBuffer extends VertexBuffer {
     }
 
     public static void unbind() {
-        unbindTYpe(GL45.GL_ARRAY_BUFFER);
+        unbindType(GL45.GL_ARRAY_BUFFER);
     }
 
     @Override

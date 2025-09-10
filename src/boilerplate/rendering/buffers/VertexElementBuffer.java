@@ -6,7 +6,7 @@ import org.lwjgl.opengl.GL45;
 /**
  * Element Array Buffer.
  */
-public class VertexElementBuffer extends VertexBuffer {
+public class VertexElementBuffer extends Buffer {
     public static final int ELEMENT_TYPE_BYTE = GL45.GL_UNSIGNED_BYTE;
     public static final int ELEMENT_TYPE_SHORT = GL45.GL_UNSIGNED_SHORT;
     public static final int ELEMENT_TYPE_INT = GL45.GL_UNSIGNED_INT;
@@ -28,7 +28,7 @@ public class VertexElementBuffer extends VertexBuffer {
     }
 
     public static void unbind() {
-        unbindTYpe(GL45.GL_ELEMENT_ARRAY_BUFFER);
+        unbindType(GL45.GL_ELEMENT_ARRAY_BUFFER);
     }
 
     @Override

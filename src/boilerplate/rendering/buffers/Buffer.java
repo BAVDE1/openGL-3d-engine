@@ -3,23 +3,23 @@ package boilerplate.rendering.buffers;
 import boilerplate.rendering.builders.BufferBuilder;
 import org.lwjgl.opengl.GL45;
 import boilerplate.utility.Logging;
-import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.opengl.GL45.*;
 
-public abstract class VertexBuffer {
+public abstract class Buffer {
     protected Integer bufferType;
     protected Integer usage = GL45.GL_DYNAMIC_DRAW;
     protected Integer bufferId = -1;
 
-    public VertexBuffer() {
+    public Buffer() {
     }
 
-    public VertexBuffer(boolean generateId) {
+    public Buffer(boolean generateId) {
         if (generateId) genId();
     }
 
@@ -35,7 +35,7 @@ public abstract class VertexBuffer {
         glBindBuffer(getBufferType(), bufferId);
     }
 
-    public static void unbindTYpe(int bufferType) {
+    public static void unbindType(int bufferType) {
         glBindBuffer(bufferType, 0);
     }
 
@@ -86,6 +86,16 @@ public abstract class VertexBuffer {
     }
 
     public void bufferSubData(int bytesOffset, FloatBuffer data) {
+        bind();
+        GL45.glBufferSubData(bufferType, bytesOffset, data);
+    }
+
+    public void bufferSubData(int bytesOffset, double[] data) {
+        bind();
+        GL45.glBufferSubData(bufferType, bytesOffset, data);
+    }
+
+    public void bufferSubData(int bytesOffset, DoubleBuffer data) {
         bind();
         GL45.glBufferSubData(bufferType, bytesOffset, data);
     }

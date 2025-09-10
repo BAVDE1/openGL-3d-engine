@@ -31,7 +31,7 @@ public class TextRenderer {
      */
     public void setupDefaultShader(Camera camera) {
         shader.genProgram();
-        shader.attachShader(String.format(BoilerplateShaders.Text2DVertex, camera.uniformBlockName), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.Text2DVertex");
+        shader.attachShader(String.format(BoilerplateShaders.Text2DVertex, camera.getUniformBlockName()), GL45.GL_VERTEX_SHADER, "BoilerplateShaders.Text2DVertex");
         shader.attachShader(BoilerplateShaders.Text2DFragment, GL45.GL_FRAGMENT_SHADER, "BoilerplateShaders.Text2DFragment");
         shader.linkProgram();
         camera.bindShaderToUniformBlock(shader);

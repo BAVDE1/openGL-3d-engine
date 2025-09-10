@@ -131,7 +131,7 @@ public class Example3d extends GameBase {
         winOps.initWindowSize = new Dimension((int) SCREEN_SIZE.x, (int) SCREEN_SIZE.y);
         window.quickSetupAndShow(winOps);
 
-        uiCamera.uniformBlockName = "UICameraView";
+        uiCamera.setUniformBlockName("UICameraView");
         uiCamera.setupUniformBuffer();
         camera.setupUniformBuffer();
         FontManager.init();
