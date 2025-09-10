@@ -106,11 +106,15 @@ public class ShaderProgram {
      * <a href="https://docs.gl/gl2/glAttachShader">Shader setup example</a>
      */
     public void attachShader(String path) {
-        attachShader(path, getShaderType(path));
+        String[] pathSplit = path.split("\\.");
+        attachShader(path, getShaderType(pathSplit[pathSplit.length-1]));
     }
 
     public void attachShader(String path, int shaderType) {
-        if (shaderType < 0) return;  // not a shader file
+        if (shaderType < 0) {
+            Logging.warn("Given shader type '%s' is not valid", shaderType);
+            return;
+        }
 
         Scanner scanner;
         try {
