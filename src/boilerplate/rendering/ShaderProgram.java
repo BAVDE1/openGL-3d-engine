@@ -249,8 +249,8 @@ public class ShaderProgram {
         glUniform1i(getUniformLocation(uniform), i);
     }
 
-    public void uniform1iv(String uniform, int[] intArray) {
-        glUniform1iv(getUniformLocation(uniform), intArray);
+    public void uniform1iv(String uniform, int[] array) {
+        glUniform1iv(getUniformLocation(uniform), array);
     }
 
     public void uniform1f(String uniform, float f) {
@@ -279,6 +279,10 @@ public class ShaderProgram {
 
     public void uniform4f(String uniform, float f1, float f2, float f3, float f4) {
         glUniform4f(getUniformLocation(uniform), f1, f2, f3, f4);
+    }
+
+    public void uniform1fv(String uniform, float[] array) {
+        glUniform1fv(getUniformLocation(uniform), array);
     }
 
     public void uniformMatrix4f(String uniform, Matrix4f m) {

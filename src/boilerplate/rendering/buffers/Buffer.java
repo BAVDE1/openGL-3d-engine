@@ -39,14 +39,25 @@ public abstract class Buffer {
         glBindBuffer(bufferType, 0);
     }
 
+    public void bufferData(FloatBuffer data) {
+        bind();
+        if (data.position() != 0) data.flip();
+        GL45.glBufferData(bufferType, data, usage);
+    }
+
     public void bufferData(float[] data) {
         bind();
         GL45.glBufferData(bufferType, data, usage);
     }
 
-    public void bufferData(FloatBuffer data) {
+    public void bufferData(DoubleBuffer data) {
         bind();
-        if (data.remaining() == 0) data.flip();
+        if (data.position() != 0) data.flip();
+        GL45.glBufferData(bufferType, data, usage);
+    }
+
+    public void bufferData(double[] data) {
+        bind();
         GL45.glBufferData(bufferType, data, usage);
     }
 
@@ -62,7 +73,7 @@ public abstract class Buffer {
 
     public void bufferData(IntBuffer data) {
         bind();
-        if (data.remaining() == 0) data.flip();
+        if (data.position() != 0) data.flip();
         GL45.glBufferData(bufferType, data, usage);
     }
 
@@ -80,13 +91,20 @@ public abstract class Buffer {
         GL45.glBufferData(bufferType, bytesSize, usage);
     }
 
+    public void bufferSubData(int bytesOffset, FloatBuffer data) {
+        bind();
+        if (data.position() != 0) data.flip();
+        GL45.glBufferSubData(bufferType, bytesOffset, data);
+    }
+
     public void bufferSubData(int bytesOffset, float[] data) {
         bind();
         GL45.glBufferSubData(bufferType, bytesOffset, data);
     }
 
-    public void bufferSubData(int bytesOffset, FloatBuffer data) {
+    public void bufferSubData(int bytesOffset, DoubleBuffer data) {
         bind();
+        if (data.position() != 0) data.flip();
         GL45.glBufferSubData(bufferType, bytesOffset, data);
     }
 
@@ -95,9 +113,25 @@ public abstract class Buffer {
         GL45.glBufferSubData(bufferType, bytesOffset, data);
     }
 
-    public void bufferSubData(int bytesOffset, DoubleBuffer data) {
+    public void bufferSubData(int bytesOffset, IntBuffer data) {
+        bind();
+        if (data.position() != 0) data.flip();
+        GL45.glBufferSubData(bufferType, bytesOffset, data);
+    }
+
+    public void bufferSubData(int bytesOffset, int[] data) {
         bind();
         GL45.glBufferSubData(bufferType, bytesOffset, data);
+    }
+
+    public void bufferSubData(int bytesOffset, ByteBuffer data) {
+        bind();
+        if (data.position() != 0) data.flip();
+        GL45.glBufferSubData(bufferType, bytesOffset, data);
+    }
+
+    public void bufferSubData(int bytesOffset, byte[] data) {
+        bufferSubData(bytesOffset, ByteBuffer.wrap(data));
     }
 
     public void genId() {
