@@ -49,6 +49,8 @@ panorama to cube map: https://jaxry.github.io/panorama-to-cubemap/
 
 beware the pipeline: https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/
 
+shadow acne: https://digitalrune.github.io/DigitalRune-Documentation/html/3f4d959e-9c98-4a97-8d85-7a73c26145d7.htm
+
 ---
 
 unfinished wiki: https://en.wikibooks.org/wiki/OpenGL_Programming

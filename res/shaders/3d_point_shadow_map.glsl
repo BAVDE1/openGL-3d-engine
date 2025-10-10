@@ -36,21 +36,20 @@ void main() {
 #version 450 core
 layout (triangles) in;
 layout (triangle_strip, max_vertices=18) out;
+layout (invocations = 6) in;  // 6 faces of a cube
 
 uniform mat4 shadowMatrices[6];
 
 out vec4 v_fragPos;
 
 void main() {
-    for (int face = 0; face < 6; ++face) {
-        gl_Layer = face;  // built-in variable that specifies to which face of the cubemap we render.
-        for (int i = 0; i < 3; ++i) {
-            v_fragPos = gl_in[i].gl_Position;
-            gl_Position = shadowMatrices[face] * v_fragPos;
-            EmitVertex();
-        }
-        EndPrimitive();
+    gl_Layer = gl_InvocationID;  // assign to built-in variable that specifies to which face of the cubemap we render.
+    for (int i = 0; i < 3; ++i) {
+        v_fragPos = gl_in[i].gl_Position;
+        gl_Position = shadowMatrices[gl_InvocationID] * v_fragPos;
+        EmitVertex();
     }
+    EndPrimitive();
 }
 
 //--- FRAG
